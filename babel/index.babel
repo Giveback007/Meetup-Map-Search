@@ -1,0 +1,27 @@
+var loop = 0;
+var mainArray = [];
+
+function ajaxCall(url) {
+$.ajax({
+			url: url,
+			type: 'get',
+			dataType: "jsonp",
+			success: (result) => {
+				
+				// var outcome = result.data.filter((x) => {		
+				// 	if (x.venue === undefined || x.venue.city === undefined) {return false}
+				// 	if (x.venue.city === 'Chicago' || x.venue.city === 'chicago') {return false}
+				// 	return true;
+				// });
+				// mainArray.concat(outcome);
+				console.log(result);
+				loop++;
+				if(loop < 30) {
+					ajaxCall(result.meta.next_link);
+				}
+			},
+			error: (err) => { console.log(err); }
+		});
+}
+
+ajaxCall('https://api.meetup.com/find/events?photo-host=public&sig_id=32284442&radius=25.0&lon=-87.994403&lat=41.957819&text=tech&key=3b4a595c65e3f41751b2b30452273')
