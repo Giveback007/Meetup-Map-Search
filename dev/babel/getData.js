@@ -7,20 +7,8 @@ function ajaxCall(url) {
 			url: url,
 			type: 'get',
 			dataType: "jsonp",
-			success: (x) => {
-				console.log(x);
-				if (x.errors) {
-					console.log(x.errors)
-					reject(x.errors)
-				}
-				// if (x.meta) {
-				// 	params.api.rateLimit = Number(x.meta['X-RateLimit-Limit']);
-				// 	params.api.limit = Number(x.meta['X-RateLimit-Remaining']);
-				// 	params.api.reset = Number(x.meta['X-RateLimit-Reset']);
-				// }
-				resolve(x);
-			},
-			error: (err) => { reject(err) }
+			success: (x) => {resolve(x)},
+			error: (err) => {reject(err)}
 		});
 	});
 }
@@ -46,7 +34,7 @@ let params = {
 	local: {lat: '41.957819', lon:'-87.994403'},
 	category: 34, // 34 -> tech
 	page: 200, // max 200
-	radius: 20.00, // max 100.00,
+	radius: 10.00, // max 100.00,
 	api: {}
 }
 
@@ -61,11 +49,13 @@ function findGroups() {
 	return new Promise((resolve, reject) => {
 
 		let groups = [];
+		let fullGroupData = [];
 
 		function nextPage(result) {
 
 			let tempArr = result.data.map(x => x.urlname)
 			groups = groups.concat(tempArr);
+			fullGroupData = fullGroupData.concat(result.data);
 
 			if (result.meta.next_link) {
 				limiter(result.meta).then(() => {
@@ -73,7 +63,8 @@ function findGroups() {
 						.then(x => nextPage(x) ).catch( x => console.log(x) );
 				});
 			} else {
-				mem.groups = groups;
+				mem.fullGroupData = fullGroupData;
+				console.log(mem.fullGroupData);
 				resolve(groups); // return aggregate groups
 			}
 
@@ -108,7 +99,7 @@ function findEventsByGroup(groups) {
 				});
 			} else {
 				console.log('end');
-				mem.events = events;
+				mem.fullEventsData = events;
 				resolve(events); // return aggregate groups
 			}
 
@@ -124,6 +115,50 @@ function findEventsByGroup(groups) {
 }
 // -- findEvents -- //
 
+// -- organizeData -- //
+function organizeData() {
+	mem.groups = {};
+	mem.events = [];
+	for (var i = 0; i < mem.fullGroupData.length; i++) {
+		let group = mem.fullGroupData[i];
+		mem.groups[group.urlname] = {
+			name: group.name,
+			url: group.urlname,
+			loc: [group.lat, group.lon],
+			members: group.members,
+			img: group.group_photo ? group.group_photo.thumb_link : false
+		}
+	}
+
+	const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+	function getTime(time) {
+		let date = new Date(time);
+		return {
+			unix: time,
+			year: date.getUTCFullYear(),
+			month: date.getUTCMonth(),
+			day: date.getUTCDate(),
+			hour: date.getUTCHours(),
+			min: date.getUTCMinutes(),
+			weekDay: weekDays[date.getUTCDay()]
+		}
+	}
+
+	mem.events = mem.fullEventsData.map(x => {
+		return {
+			name: x.name,
+			group: x.group.urlname,
+			loc: x.venue ? [x.venue.lat, x.venue.lon] : false,
+			time: getTime(x.time + x.utc_offset),
+			duration: x.duration / 60000 || null,
+			link: x.link
+		}
+	});
+	mem.events.sort((a, b) => a.time.unix - b.time.unix)
+	console.log(mem.events);
+}
+// -- organizeData -- //
+
 findGroups().then(x => {
-	findEventsByGroup(x).then(x => console.log(x))
+	findEventsByGroup(x).then(() => organizeData());
 });
