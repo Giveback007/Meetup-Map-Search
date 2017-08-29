@@ -1,52 +1,129 @@
 'use strict';
-const meetupApiKey = '3b4a595c65e3f41751b2b30452273';
-const local = {lat: '41.957819', lon:'-87.994403'}
-const category = 34;
-const radius = 15.00;
-const page = 10;
 
-
-let loop = 10;
-let tempArr = [];
-
-let groupUrl = [];
-
+// -- Prep -- //
 function ajaxCall(url) {
-	$.ajax({
-		url: url,
-		type: 'get',
-		dataType: "jsonp",
-		success: function success(result) {
-			console.log(result);
-			tempArr = result.data.map(x => x.urlname);
-			groupUrl = groupUrl.concat(tempArr);
-			if (result.meta.next_link) {
-				ajaxCall(result.meta.next_link + '&key=' + meetupApiKey);
-			} else {
-				console.log('fin', groupUrl);
-			}
-		},
-		error: function error(err) {
-			console.log(err);
+	return new Promise((resolve, reject) => {
+		$.ajax({
+			url: url,
+			type: 'get',
+			dataType: "jsonp",
+			success: (x) => {
+				console.log(x);
+				if (x.errors) {
+					console.log(x.errors)
+					reject(x.errors)
+				}
+				// if (x.meta) {
+				// 	params.api.rateLimit = Number(x.meta['X-RateLimit-Limit']);
+				// 	params.api.limit = Number(x.meta['X-RateLimit-Remaining']);
+				// 	params.api.reset = Number(x.meta['X-RateLimit-Reset']);
+				// }
+				resolve(x);
+			},
+			error: (err) => { reject(err) }
+		});
+	});
+}
+
+// meetup API has a limit of calls that can be made per a set amount of time
+// this limiter prevent throttling due to exceeding of said limit
+function limiter(meta) {
+	let limit = Number(meta['X-RateLimit-Remaining']), reset = Number(meta['X-RateLimit-Reset']);
+	return new Promise((resolve, reject) => {
+		if (limit <= 1) {
+			console.log('limit ' + reset + ' seconds until reset'); // temp -- change to load counter
+			setTimeout(resolve, (reset * 1000) + 500);
+		} else {
+			resolve();
 		}
 	});
 }
 
-ajaxCall(`https://api.meetup.com/find/groups?&sign=true&photo-host=public&upcoming_events=true&lon=${local.lon}&radius=${radius}&category=${category}&lat=${local.lat}&order=distance&page=${page}&key=${meetupApiKey}`);
+let mem = {};
 
-// for (var i = 0; i < results[0].address_components.length; i++) {
-// 	var component = results[0].address_components[i];
-//
-//   switch(component.types[0]) {
-//     case 'locality':
-//       storableLocation.city = component.long_name;
-//       break;
-//     case 'administrative_area_level_1':
-//       storableLocation.state = component.short_name;
-//       break;
-//     case 'country':
-//       storableLocation.country = component.long_name;
-//       storableLocation.registered_country_iso_code = component.short_name;
-//       break;
-//   }
-// };
+let params = {
+	meetupKey: '457b71183481b13752d69755d97632',
+	local: {lat: '41.957819', lon:'-87.994403'},
+	category: 34, // 34 -> tech
+	page: 200, // max 200
+	radius: 20.00, // max 100.00,
+	api: {}
+}
+
+params.api.groupsURL = `https://api.meetup.com/find/groups?&sign=true&photo-host=public&upcoming_events=true&lon=${params.local.lon}&radius=${params.radius}&category=${params.category}&lat=${params.local.lat}&order=distance&page=${params.page}&key=${params.meetupKey}`;
+params.api.eventsURL = function(group) {
+	return `https://api.meetup.com/${group}/events?&sign=true&photo-host=public&desc=true&status=upcoming&page=10&key=${params.meetupKey}`
+}
+// -- Prep -- //
+
+// -- findGroups -- //
+function findGroups() {
+	return new Promise((resolve, reject) => {
+
+		let groups = [];
+
+		function nextPage(result) {
+
+			let tempArr = result.data.map(x => x.urlname)
+			groups = groups.concat(tempArr);
+
+			if (result.meta.next_link) {
+				limiter(result.meta).then(() => {
+					ajaxCall(result.meta.next_link + '&key=' + params.meetupKey)
+						.then(x => nextPage(x) ).catch( x => console.log(x) );
+				});
+			} else {
+				mem.groups = groups;
+				resolve(groups); // return aggregate groups
+			}
+
+		}
+
+		ajaxCall(params.api.groupsURL)
+			.then(x => {
+				nextPage(x);
+			}).catch( x => console.log(x) );
+
+	});
+}
+// -- findGroups -- //
+
+// -- findEvents -- //
+function findEventsByGroup(groups) {
+	console.log('groups', groups.length); // temp
+
+	return new Promise((resolve, reject) => {
+		let counter = 0;
+		let events = [];
+
+		function nextGroup(result) {
+			counter++;
+			result.data.map(x => events.push(x));
+			if (counter < groups.length) {
+				limiter(result.meta).then(() => {
+					ajaxCall(params.api.eventsURL(groups[counter]))
+						.then(x => {
+							nextGroup(x)
+						}).catch( x => console.log(x) );
+				});
+			} else {
+				console.log('end');
+				mem.events = events;
+				resolve(events); // return aggregate groups
+			}
+
+		}
+
+		ajaxCall(params.api.eventsURL(groups[counter]))
+			.then(x => {
+				nextGroup(x)
+			}).catch(x => console.log(x));
+
+	});
+
+}
+// -- findEvents -- //
+
+findGroups().then(x => {
+	findEventsByGroup(x).then(x => console.log(x))
+});
