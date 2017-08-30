@@ -1,4 +1,4 @@
-// -- prep -- //
+// -- helpers -- //
 function ajaxCall(url) {
 	return new Promise((resolve, reject) => {
 		$.ajax({
@@ -26,7 +26,7 @@ function limiter(meta) {
 		}
 	});
 }
-// -- prep -- //
+// -- helpers -- //
 
 
 // -- findEvents -- //
@@ -47,13 +47,12 @@ function findEvents(url, eventArr = []) {
 			}
 		}
 
-
 		// -- nextPage -- //
 		function nextPage(result) {
 
 			let tempArr = result.data.map(x => {
 				let obj = x;
-				obj.loc = obj.venue ? [obj.venue.lat, obj.venue.lon] : false;
+				obj.loc = obj.venue ? [obj.venue.lat, obj.venue.lon] : null;
 				obj.time = getTime(obj.time + obj.utc_offset);
 				obj.duration = obj.duration / 60000 || null;
 				delete obj.utc_offset;
@@ -89,8 +88,8 @@ function findEvents(url, eventArr = []) {
 let params = {
 	meetupKey: '457b71183481b13752d69755d97632',
 	local: ['41.957819', '-87.994403'],
-	radius: 20, // max 100.00
-	dateLimit: Date.now() + (7 * 24 * 60 * 60000),
+	radius: 30, // max 100.00
+	dateLimit: Date.now() + (1 * 24 * 60 * 60000),
 	api: {
 		omit: `description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url`,
 		eventUrl: function() {
@@ -103,4 +102,4 @@ let params = {
 params.mem.events = findEvents(params.api.eventUrl());
 // -- event data -- //
 
-// params.mem.events.then(x => x.map)
+params.mem.events.then(x => setMap(params.local, x));

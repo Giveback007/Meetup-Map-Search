@@ -1,9 +1,9 @@
 'use strict';
 
-//@prepros-append babel/getData.js
+//@prepros-append babel/getEventData.js
 //@prepros-append babel/leaflet.js
 
-// -- prep -- //
+// -- helpers -- //
 function ajaxCall(url) {
 	return new Promise(function (resolve, reject) {
 		$.ajax({
@@ -34,7 +34,7 @@ function limiter(meta) {
 		}
 	});
 }
-// -- prep -- //
+// -- helpers -- //
 
 
 // -- findEvents -- //
@@ -62,7 +62,7 @@ function findEvents(url) {
 
 			var tempArr = result.data.map(function (x) {
 				var obj = x;
-				obj.loc = obj.venue ? [obj.venue.lat, obj.venue.lon] : false;
+				obj.loc = obj.venue ? [obj.venue.lat, obj.venue.lon] : null;
 				obj.time = getTime(obj.time + obj.utc_offset);
 				obj.duration = obj.duration / 60000 || null;
 				delete obj.utc_offset;
@@ -100,8 +100,8 @@ function findEvents(url) {
 var params = {
 	meetupKey: '457b71183481b13752d69755d97632',
 	local: ['41.957819', '-87.994403'],
-	radius: 20, // max 100.00
-	dateLimit: Date.now() + 7 * 24 * 60 * 60000,
+	radius: 30, // max 100.00
+	dateLimit: Date.now() + 1 * 24 * 60 * 60000,
 	api: {
 		omit: 'description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url',
 		eventUrl: function eventUrl() {
@@ -114,18 +114,46 @@ var params = {
 params.mem.events = findEvents(params.api.eventUrl());
 // -- event data -- //
 
-// params.mem.events.then(x => x.map)
+params.mem.events.then(function (x) {
+	return setMap(params.local, x);
+});
 
-var map = L.map('map').setView(params.local, 8);
-var osm = new L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="http://openstreetmap.org/">OpenStreetMap</a> contributors' });
-map.addLayer(osm);
+var mainMap = L.map('map').setView(params.local, 10); // TODO: set zoom to full view of radius
 
-var marker = L.marker(params.local).addTo(map);
-marker.bindPopup("<b>You Are Here</b>");
+function initMap() {
+	var openstreetmaps = new L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="http://openstreetmap.org/">OpenStreetMap</a> contributors' });
+	mainMap.addLayer(openstreetmaps);
+}
+initMap();
 
-var circle = L.circle(params.local, {
-	// color: 'red',
-	// fillColor: '#f03',
-	fillOpacity: 0.05,
-	radius: 1609.34 * params.radius
-}).addTo(map);
+function setMap() {
+	var center = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : params.local;
+	var events = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+
+	// let centerIcon = L.divIcon({className: 'centerMarker'});
+	// let centerMarker = L.marker(center, {icon: centerIcon}).addTo(mainMap);
+	// centerMarker.bindPopup("<b>You Are Here</b>");
+
+	// -- Create Markers From Events Data -- //
+	var markerCluster = L.markerClusterGroup();
+	events.map(function (x) {
+		// if (!x.loc) {coord = [x.group.lat, x.group.lon]}
+		if (!x.loc) {
+			return;
+		}
+		var marker = new L.marker(x.loc);
+		var popup = new L.Popup({ closeButton: false, offset: new L.Point(0.5, -24) });
+		markerCluster.addLayer(marker);
+	});
+	mainMap.addLayer(markerCluster);
+
+	// -- Circle Of The Search Radius -- //
+	var radius = L.circle(params.local, {
+		radius: 1609.344 * params.radius,
+		interactive: false,
+		fillOpacity: 0.07,
+		opacity: 0.4
+	}).addTo(mainMap);
+
+	var markerCluster;
+}
