@@ -62,9 +62,9 @@ function getFullTime(time)
 
 
 // -- findEvents -- //
-function findEvents(url, eventArr = [])
+function findEvents(url, dateLimit)
 {
-	let events = eventArr;
+	let events = [];
 	return new Promise((resolve, reject) =>
 	{
 		function getTime(time)
@@ -100,7 +100,7 @@ function findEvents(url, eventArr = [])
 
 			let lastDate = tempArr[tempArr.length - 1].time.unix;
 
-			if (result.meta.next_link && lastDate < params.dateLimit)
+			if (result.meta.next_link && lastDate < dateLimit)
 			{
 				limiter(result.meta).then(() =>
 				{
@@ -117,12 +117,9 @@ function findEvents(url, eventArr = [])
 
 		}
 		// -- nextPage -- //
-
 		ajaxCall(url).then(x => nextPage(x));
 	});
 }
-
-
 
 // -- event data -- //
 let params =
@@ -142,6 +139,6 @@ let params =
 	mem: {}
 }
 
-params.mem.events = findEvents(params.api.eventUrl());
+params.mem.events = findEvents(params.api.eventUrl(), params.dateLimit);
 
 params.mem.events.then(x => renderMap(params.local, x));

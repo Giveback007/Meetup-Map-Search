@@ -1,7 +1,17 @@
 'use strict';
 
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
 //@prepros-append babel/getEventData.js
 //@prepros-append babel/leaflet.js
+//@prepros-append babel/controls.js
+//@prepros-append babel/start.js
 
 // -- helpers -- //
 function ajaxCall(url) {
@@ -49,10 +59,8 @@ function getFullTime(time) {
 
 
 // -- findEvents -- //
-function findEvents(url) {
-	var eventArr = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-
-	var events = eventArr;
+function findEvents(url, dateLimit) {
+	var events = [];
 	return new Promise(function (resolve, reject) {
 		function getTime(time) {
 			var date = new Date(time);
@@ -82,7 +90,7 @@ function findEvents(url) {
 
 			var lastDate = tempArr[tempArr.length - 1].time.unix;
 
-			if (result.meta.next_link && lastDate < params.dateLimit) {
+			if (result.meta.next_link && lastDate < dateLimit) {
 				limiter(result.meta).then(function () {
 					ajaxCall(result.meta.next_link + ('&key=' + params.meetupKey)).then(function (x) {
 						return nextPage(x);
@@ -95,7 +103,6 @@ function findEvents(url) {
 			}
 		}
 		// -- nextPage -- //
-
 		ajaxCall(url).then(function (x) {
 			return nextPage(x);
 		});
@@ -117,7 +124,7 @@ var params = {
 	mem: {}
 };
 
-params.mem.events = findEvents(params.api.eventUrl());
+params.mem.events = findEvents(params.api.eventUrl(), params.dateLimit);
 
 params.mem.events.then(function (x) {
 	return renderMap(params.local, x);
@@ -177,3 +184,60 @@ function renderMap() {
 	radius.addTo(mainMap);
 }
 // -- setMap -- //
+
+
+var Controls = function (_React$Component) {
+	_inherits(Controls, _React$Component);
+
+	function Controls(props) {
+		_classCallCheck(this, Controls);
+
+		var _this = _possibleConstructorReturn(this, (Controls.__proto__ || Object.getPrototypeOf(Controls)).call(this, props));
+
+		_this.state = {
+			local: ['41.957819', '-87.994403'], // temp -- update by user location
+			radius: 15, // max 100.00
+			dateLimit: Date.now() + 1 * (24 * 60 * 60000), // temp -- make this adjustable
+			api: {
+				key: '457b71183481b13752d69755d97632',
+				omit: 'description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url',
+				getUrl: function getUrl() {
+					return 'https://api.meetup.com/find/events?&sign=true&photo-host=public&lat=' + _this.state.local[0] + '&lon=' + _this.state.local[1] + '&radius=' + _this.state.radius + '&fields=group_photo,group_category&omit=' + _this.state.api.omit + '&key=' + _this.state.api.key;
+				}
+			},
+			mem: {}
+		};
+		return _this;
+	}
+
+	_createClass(Controls, [{
+		key: 'render',
+		value: function render() {
+			console.log('react running');
+			var events = findEvents(this.state.api.getUrl(), this.state.dateLimit);
+			events.then(function (x) {
+				return console.log(x);
+			});
+			return React.createElement('div', null);
+		}
+	}]);
+
+	return Controls;
+}(React.Component);
+
+// function error() {
+// 	console.log(error);
+// }
+// navigator.geolocation.getCurrentPosition(pos => {
+// 	console.log(pos)
+// }, error, {
+// 	enableHighAccuracy: true,
+// 	maximumAge: Infinity
+// });
+
+(function () {
+	ReactDOM.render(React.createElement(Controls, null), document.getElementById('nav'));
+	// render controls
+	// find events
+	// render map
+})();
