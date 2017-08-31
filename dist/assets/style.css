@@ -2,8 +2,32 @@
   height: 100vh; }
 
 .centerMarker {
-  border: solid 1px red;
-  border-radius: 50%; }
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  margin: auto;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex; }
+  .centerMarker div {
+    margin: auto;
+    font-size: 35px; }
+    .centerMarker div i {
+      margin: 0;
+      padding: 0;
+      text-shadow: 2px 2px 2px rgba(255, 255, 255, 0.1); }
+
+.marker {
+  border: solid 2px white;
+  overflow: hidden;
+  border-radius: 50%;
+  -webkit-box-shadow: 1px 2px 2px;
+  box-shadow: 1px 2px 2px; }
+  .marker .marker-img {
+    height: 100%;
+    width: 100%;
+    background-size: cover;
+    background-position: center; }
 
 html, body {
   margin: 0;

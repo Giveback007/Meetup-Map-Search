@@ -11,7 +11,7 @@ function ajaxCall(url) {
 			type: 'get',
 			dataType: "jsonp",
 			success: function success(x) {
-				// console.log(x); // temp
+				console.log(x); // temp
 				resolve(x);
 			},
 			error: function error(err) {
@@ -22,9 +22,9 @@ function ajaxCall(url) {
 }
 
 function limiter(meta) {
-	var limit = Number(meta['X-RateLimit-Remaining']),
-	    reset = Number(meta['X-RateLimit-Reset']);
-	console.log('limit left ' + limit, ', reset ' + reset);
+	var limit = Number(meta['X-RateLimit-Remaining']);
+	var reset = Number(meta['X-RateLimit-Reset']);
+	// console.log('limit left ' + limit, ', reset ' + reset) // temp
 	return new Promise(function (resolve, reject) {
 		if (limit <= 1) {
 			console.log('limit reached, ' + reset + ' seconds until reset'); // temp -- change to load counter
@@ -33,6 +33,17 @@ function limiter(meta) {
 			resolve();
 		}
 	});
+}
+
+var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+var dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function getFullTime(time) {
+	var hour = (time.hour + 11) % 12 + 1;
+	var amPm = time.hour < 12 ? 'am' : 'pm';
+	var min = time.min === 0 ? '00' : time.min;
+	var full = dayOfWeek[time.weekDay] + ', ' + months[time.month] + ' ' + time.day + ', ' + hour + ':' + min + amPm;
+	return full;
 }
 // -- helpers -- //
 
@@ -43,7 +54,6 @@ function findEvents(url) {
 
 	var events = eventArr;
 	return new Promise(function (resolve, reject) {
-
 		function getTime(time) {
 			var date = new Date(time);
 			return {
@@ -59,7 +69,6 @@ function findEvents(url) {
 
 		// -- nextPage -- //
 		function nextPage(result) {
-
 			var tempArr = result.data.map(function (x) {
 				var obj = x;
 				obj.loc = obj.venue ? [obj.venue.lat, obj.venue.lon] : null;
@@ -70,9 +79,6 @@ function findEvents(url) {
 				return obj;
 			});
 			events = events.concat(tempArr);
-
-			var lastEvent = tempArr[tempArr.length - 1]; // temp
-			console.log('last date', lastEvent.time); // temp
 
 			var lastDate = tempArr[tempArr.length - 1].time.unix;
 
@@ -100,7 +106,7 @@ function findEvents(url) {
 var params = {
 	meetupKey: '457b71183481b13752d69755d97632',
 	local: ['41.957819', '-87.994403'],
-	radius: 30, // max 100.00
+	radius: 15, // max 100.00
 	dateLimit: Date.now() + 1 * 24 * 60 * 60000,
 	api: {
 		omit: 'description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url',
@@ -112,37 +118,51 @@ var params = {
 };
 
 params.mem.events = findEvents(params.api.eventUrl());
-// -- event data -- //
 
 params.mem.events.then(function (x) {
-	return setMap(params.local, x);
+	return renderMap(params.local, x);
 });
 
 var mainMap = L.map('map').setView(params.local, 10); // TODO: set zoom to full view of radius
 
-function initMap() {
+(function initMap() {
 	var openstreetmaps = new L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="http://openstreetmap.org/">OpenStreetMap</a> contributors' });
 	mainMap.addLayer(openstreetmaps);
-}
-initMap();
+})();
 
-function setMap() {
+// -- setMap -- //
+function renderMap() {
 	var center = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : params.local;
 	var events = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
 
-	// let centerIcon = L.divIcon({className: 'centerMarker'});
-	// let centerMarker = L.marker(center, {icon: centerIcon}).addTo(mainMap);
-	// centerMarker.bindPopup("<b>You Are Here</b>");
+	var centerIcon = L.divIcon({
+		className: 'centerMarker',
+		iconSize: new L.Point(100, 100),
+		html: '<div><i class="fa fa-compass" aria-hidden="true"></i></div>'
+	});
+	var centerMarker = L.marker(center, { icon: centerIcon }).addTo(mainMap);
+	centerMarker.bindPopup("<b>Search Center</b>");
 
 	// -- Create Markers From Events Data -- //
 	var markerCluster = L.markerClusterGroup();
 	events.map(function (x) {
-		// if (!x.loc) {coord = [x.group.lat, x.group.lon]}
-		if (!x.loc) {
-			return;
+		var loc = x.loc ? x.loc : [x.group.lat, x.group.lon];
+		if (!loc[0] && !loc[1]) {
+			loc = [x.group.lat, x.group.lon];
 		}
-		var marker = new L.marker(x.loc);
-		var popup = new L.Popup({ closeButton: false, offset: new L.Point(0.5, -24) });
+		var img = x.group.photo ? x.group.photo.thumb_link : 'assets/imgs/meetup_logo.png';
+
+		var icon = L.divIcon({
+			className: 'marker',
+			iconSize: new L.Point(50, 50),
+			html: '<div class=\'marker-img\' style=\'background-image: url(' + img + ')\'></div>'
+		});
+
+		var marker = new L.marker(loc, { icon: icon }).bindPopup('<b>' + x.group.name + '</b>\n        <br/>' + x.name + '\n        <br/><i class="fa fa-clock-o" aria-hidden="true"></i>\n          ' + getFullTime(x.time) + '\n        <br/><a href=\'' + x.link + '\' target=\'_blank\'>More Info</a>', { offset: [0, -5] }).bindTooltip('' + x.group.name, {
+			offset: [0, -20],
+			direction: 'top'
+		});
+
 		markerCluster.addLayer(marker);
 	});
 	mainMap.addLayer(markerCluster);
@@ -153,7 +173,7 @@ function setMap() {
 		interactive: false,
 		fillOpacity: 0.07,
 		opacity: 0.4
-	}).addTo(mainMap);
-
-	var markerCluster;
+	});
+	radius.addTo(mainMap);
 }
+// -- setMap -- //
