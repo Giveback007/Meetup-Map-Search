@@ -40,7 +40,7 @@ function limiter(meta)
 	});
 }
 
-var months =
+let months =
 	[
 		'Jan', 'Feb', 'Mar',
 		'Apr', 'May', 'Jun',
@@ -48,7 +48,7 @@ var months =
 		'Oct', 'Nov', 'Dec'
 	];
 
-var daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+let daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function getTimeObj(time)
 {
@@ -67,12 +67,27 @@ function getTimeObj(time)
 
 function getTimeString(time)
 	{
-		var hour = ((time.hour + 11) % 12 + 1);
-		var amPm = time.hour < 12 ? 'am' : 'pm';
-		var min = time.min === 0 ? '00' : time.min;
-		var full = `${daysOfWeek[time.weekDay]}, ${months[time.month]} ${time.day}, ${hour}:${min}${amPm}`;
+		let hour = ((time.hour + 11) % 12 + 1);
+		let amPm = time.hour < 12 ? 'am' : 'pm';
+		let min = time.min === 0 ? '00' : time.min;
+		let full = `${daysOfWeek[time.weekDay]}, ${months[time.month]} ${time.day}, ${hour}:${min}${amPm}`;
 		return full;
 	}
+
+function createDaysObj() {
+
+}
+
+function dateLimit(monthsFromNow) {
+	let date = new Date();
+	let m = date.getMonth();
+	let y = date.getFullYear();
+
+	let lastDay = new Date(y, m + monthsFromNow + 1, 0);
+	let end = lastDay.setHours(23, 59, 59, 999);
+
+	return end;
+}
 // -- helpers -- //
 
 
@@ -104,7 +119,7 @@ function findEvents(url, dateLimit, key)
 			{
 				limiter(result.meta).then(() =>
 				{
-					ajaxCall(result.meta.next_link + `&key=${params.meetupKey}`)
+					ajaxCall(result.meta.next_link + `&key=${key}`)
 						.then(x => nextPage(x))
 				});
 			}
@@ -124,18 +139,18 @@ function findEvents(url, dateLimit, key)
 // -- event data -- //
 let params =
 {
-	meetupKey: '457b71183481b13752d69755d97632',
-	local: ['41.957819', '-87.994403'],
-	radius: 10, // max 100.00
-	dateLimit: Date.now() + (1 * 24 * 60 * 60000),
-	api:
-	{
-		omit: `description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url`,
-		eventUrl: function()
-		{
-			return `https://api.meetup.com/find/events?&sign=true&photo-host=public&lat=${params.local[0]}&lon=${params.local[1]}&radius=${params.radius}&fields=group_photo,group_category&omit=${params.api.omit}&key=${params.meetupKey}`
-		}
-	},
+	// meetupKey: '457b71183481b13752d69755d97632',
+	// local: ['41.957819', '-87.994403'],
+	// radius: 10, // max 100.00
+	//
+	// api:
+	// {
+	// 	omit: `description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url`,
+	// 	eventUrl: function()
+	// 	{
+	// 		return `https://api.meetup.com/find/events?&sign=true&photo-host=public&lat=${params.local[0]}&lon=${params.local[1]}&radius=${params.radius}&fields=group_photo,group_category&omit=${params.api.omit}&key=${params.meetupKey}`
+	// 	}
+	// },
 	mem: {}
 }
 
