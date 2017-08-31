@@ -1,13 +1,32 @@
-var mainMap = L.map('map').setView(params.local, 10); // TODO: set zoom to full view of radius
-
-(function initMap()
+// This React class encapsulates the leaflet map
+class Map extends React.Component
 {
-  var openstreetmaps = new L.tileLayer(
-    'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    {attribution: '&copy; <a href="http://openstreetmap.org/">OpenStreetMap</a> contributors'}
-  );
-  mainMap.addLayer(openstreetmaps);
-})();
+  constructor(props)
+  {
+    super(props);
+    this.state = {}
+  }
+  mainMap;
+  initMap = () =>
+  {
+    // TODO: set zoom to full view of radius
+    this.mainMap = L.map('map').setView(params.local, 10);
+    var openstreetmaps = new L.tileLayer(
+      'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      {attribution: '&copy; <a href="http://openstreetmap.org/">OpenStreetMap</a> contributors'}
+    );
+    this.mainMap.addLayer(openstreetmaps);
+  }
+
+  componentDidMount()
+  {
+    this.initMap();
+  }
+  render()
+  {
+    return (null);
+  }
+}
 
 // -- setMap -- //
 function renderMap(center = params.local, events = [])

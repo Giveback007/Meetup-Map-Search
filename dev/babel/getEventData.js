@@ -10,7 +10,7 @@ function ajaxCall(url)
 			dataType: "jsonp",
 			success: (x) =>
 			{
-				console.log(x); // temp
+				console.log('ajax', x); // temp
 				resolve(x)
 			},
 			error: (err) =>
@@ -47,41 +47,41 @@ var months =
 		'Jul', 'Aug', 'Sep',
 		'Oct', 'Nov', 'Dec'
 	];
-var dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+var daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-function getFullTime(time)
+function getTimeObj(time)
+{
+	let date = new Date(time);
+	return (
+	{
+		unix: time,
+		year: date.getUTCFullYear(),
+		month: date.getUTCMonth(),
+		day: date.getUTCDate(),
+		hour: date.getUTCHours(),
+		min: date.getUTCMinutes(),
+		weekDay: date.getUTCDay()
+	});
+}
+
+function getTimeString(time)
 	{
 		var hour = ((time.hour + 11) % 12 + 1);
 		var amPm = time.hour < 12 ? 'am' : 'pm';
 		var min = time.min === 0 ? '00' : time.min;
-		var full = `${dayOfWeek[time.weekDay]}, ${months[time.month]} ${time.day}, ${hour}:${min}${amPm}`;
+		var full = `${daysOfWeek[time.weekDay]}, ${months[time.month]} ${time.day}, ${hour}:${min}${amPm}`;
 		return full;
 	}
 // -- helpers -- //
 
 
 // -- findEvents -- //
-function findEvents(url, dateLimit)
+function findEvents(url, dateLimit, key)
 {
 	let events = [];
 	return new Promise((resolve, reject) =>
 	{
-		function getTime(time)
-		{
-			let date = new Date(time);
-			return (
-			{
-				unix: time,
-				year: date.getUTCFullYear(),
-				month: date.getUTCMonth(),
-				day: date.getUTCDate(),
-				hour: date.getUTCHours(),
-				min: date.getUTCMinutes(),
-				weekDay: date.getUTCDay()
-			});
-		}
-
 		// -- nextPage -- //
 		function nextPage(result)
 		{
@@ -90,7 +90,7 @@ function findEvents(url, dateLimit)
 				let obj = x;
 				obj.loc = obj.venue ?
 					[obj.venue.lat, obj.venue.lon] : null;
-				obj.time = getTime(obj.time + obj.utc_offset);
+				obj.time = getTimeObj(obj.time + obj.utc_offset);
 				obj.duration = obj.duration / 60000 || null;
 				delete obj.utc_offset;
 				delete obj.venue;
@@ -110,8 +110,8 @@ function findEvents(url, dateLimit)
 			}
 			else
 			{
-				console.log(events); // temp
-				params.mem.next_link = result.meta.next_link
+				console.log('find events', events); // temp
+				// params.mem.next_link = result.meta.next_link
 				resolve(events)
 			}
 
@@ -126,7 +126,7 @@ let params =
 {
 	meetupKey: '457b71183481b13752d69755d97632',
 	local: ['41.957819', '-87.994403'],
-	radius: 15, // max 100.00
+	radius: 10, // max 100.00
 	dateLimit: Date.now() + (1 * 24 * 60 * 60000),
 	api:
 	{
@@ -139,6 +139,6 @@ let params =
 	mem: {}
 }
 
-params.mem.events = findEvents(params.api.eventUrl(), params.dateLimit);
+// params.mem.events = findEvents(params.api.eventUrl(), params.dateLimit);
 
-params.mem.events.then(x => renderMap(params.local, x));
+// params.mem.events.then(x => renderMap(params.local, x));
