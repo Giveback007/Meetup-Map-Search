@@ -5,8 +5,8 @@ class Map extends React.Component
   {
     super(props);
     this.state = {
-      radius: 25,
-      dateLimit: Date.now() + (1 * 24 * 60 * 60000),
+      radius: 12,
+      dateLimit: Date.now() + (0.5 * 24 * 60 * 60000),
       searchLoc: '',
       api:
       {

@@ -55,7 +55,7 @@ function getTimeObj(time)
 	let date = new Date(time);
 	return (
 	{
-		unix: time,
+		milis: time,
 		year: date.getUTCFullYear(),
 		month: date.getUTCMonth(),
 		day: date.getUTCDate(),
@@ -66,33 +66,47 @@ function getTimeObj(time)
 }
 
 function getTimeString(time)
-	{
-		let hour = ((time.hour + 11) % 12 + 1);
-		let amPm = time.hour < 12 ? 'am' : 'pm';
-		let min = time.min === 0 ? '00' : time.min;
-		let full = `${daysOfWeek[time.weekDay]}, ${months[time.month]} ${time.day}, ${hour}:${min}${amPm}`;
-		return full;
-	}
-
-function createDaysObj() {
-
+{
+	let hour = ((time.hour + 11) % 12 + 1);
+	let amPm = time.hour < 12 ? 'am' : 'pm';
+	let min = time.min === 0 ? '00' : time.min;
+	let full = `${daysOfWeek[time.weekDay]}, ${months[time.month]} ${time.day}, ${hour}:${min}${amPm}`;
+	return full;
 }
 
-function dateLimit(monthsFromNow) {
+function dateLimit(monthsFromNow)
+{
 	let date = new Date();
-	let m = date.getMonth();
-	let y = date.getFullYear();
+	let m = date.getUTCMonth();
+	let y = date.getUTCFullYear();
 
 	let lastDay = new Date(y, m + monthsFromNow + 1, 0);
 	let end = lastDay.setHours(23, 59, 59, 999);
 
 	return end;
 }
+
+function mapOutDates(limit)
+{
+  let obj = {}
+	let oneDay = 24 * 60 * 60 * 1000;
+  let today = new Date().setUTCHours(23, 59, 59, 999);
+	let lastDay = new Date(limit).setUTCHours(23, 59, 59, 999);
+	let numDays = (lastDay - today) / oneDay;
+
+	obj[`${today.getUTCFullYear}-${today.getUTCMonth}`]
+	// for (let i = 0; i <= numDays; i++)
+	// {
+	// 	if (!obj[]) {obj[] = {}}
+	// 	obj[][]
+	// }
+  return obj;
+}
 // -- helpers -- //
 
 
 // -- findEvents -- //
-function findEvents(url, dateLimit, key)
+function findEvents(url, limit, key)
 {
 	let events = [];
 	return new Promise((resolve, reject) =>
@@ -113,9 +127,9 @@ function findEvents(url, dateLimit, key)
 			});
 			events = events.concat(tempArr);
 
-			let lastDate = tempArr[tempArr.length - 1].time.unix;
+			let lastDate = tempArr[tempArr.length - 1].time.milis;
 
-			if (result.meta.next_link && lastDate < dateLimit)
+			if (result.meta.next_link && lastDate < limit)
 			{
 				limiter(result.meta).then(() =>
 				{
@@ -151,7 +165,7 @@ let params =
 	// 		return `https://api.meetup.com/find/events?&sign=true&photo-host=public&lat=${params.local[0]}&lon=${params.local[1]}&radius=${params.radius}&fields=group_photo,group_category&omit=${params.api.omit}&key=${params.meetupKey}`
 	// 	}
 	// },
-	mem: {}
+	// mem: {}
 }
 
 // params.mem.events = findEvents(params.api.eventUrl(), params.dateLimit);

@@ -52,7 +52,7 @@ var daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 function getTimeObj(time) {
   var date = new Date(time);
   return {
-    unix: time,
+    milis: time,
     year: date.getUTCFullYear(),
     month: date.getUTCMonth(),
     day: date.getUTCDate(),
@@ -70,23 +70,37 @@ function getTimeString(time) {
   return full;
 }
 
-function createDaysObj() {}
-
 function dateLimit(monthsFromNow) {
   var date = new Date();
-  var m = date.getMonth();
-  var y = date.getFullYear();
+  var m = date.getUTCMonth();
+  var y = date.getUTCFullYear();
 
   var lastDay = new Date(y, m + monthsFromNow + 1, 0);
   var end = lastDay.setHours(23, 59, 59, 999);
 
   return end;
 }
+
+function mapOutDates(limit) {
+  var obj = {};
+  var oneDay = 24 * 60 * 60 * 1000;
+  var today = new Date().setUTCHours(23, 59, 59, 999);
+  var lastDay = new Date(limit).setUTCHours(23, 59, 59, 999);
+  var numDays = (lastDay - today) / oneDay;
+
+  obj[today.getUTCFullYear + '-' + today.getUTCMonth];
+  // for (let i = 0; i <= numDays; i++)
+  // {
+  // 	if (!obj[]) {obj[] = {}}
+  // 	obj[][]
+  // }
+  return obj;
+}
 // -- helpers -- //
 
 
 // -- findEvents -- //
-function findEvents(url, dateLimit, key) {
+function findEvents(url, limit, key) {
   var events = [];
   return new Promise(function (resolve, reject) {
     // -- nextPage -- //
@@ -102,9 +116,9 @@ function findEvents(url, dateLimit, key) {
       });
       events = events.concat(tempArr);
 
-      var lastDate = tempArr[tempArr.length - 1].time.unix;
+      var lastDate = tempArr[tempArr.length - 1].time.milis;
 
-      if (result.meta.next_link && lastDate < dateLimit) {
+      if (result.meta.next_link && lastDate < limit) {
         limiter(result.meta).then(function () {
           ajaxCall(result.meta.next_link + ('&key=' + key)).then(function (x) {
             return nextPage(x);
@@ -124,27 +138,28 @@ function findEvents(url, dateLimit, key) {
 }
 
 // -- event data -- //
-var params = {
-  // meetupKey: '457b71183481b13752d69755d97632',
-  // local: ['41.957819', '-87.994403'],
-  // radius: 10, // max 100.00
-  //
-  // api:
-  // {
-  // 	omit: `description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url`,
-  // 	eventUrl: function()
-  // 	{
-  // 		return `https://api.meetup.com/find/events?&sign=true&photo-host=public&lat=${params.local[0]}&lon=${params.local[1]}&radius=${params.radius}&fields=group_photo,group_category&omit=${params.api.omit}&key=${params.meetupKey}`
-  // 	}
-  // },
-  mem: {}
+var params = {}
+// meetupKey: '457b71183481b13752d69755d97632',
+// local: ['41.957819', '-87.994403'],
+// radius: 10, // max 100.00
+//
+// api:
+// {
+// 	omit: `description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url`,
+// 	eventUrl: function()
+// 	{
+// 		return `https://api.meetup.com/find/events?&sign=true&photo-host=public&lat=${params.local[0]}&lon=${params.local[1]}&radius=${params.radius}&fields=group_photo,group_category&omit=${params.api.omit}&key=${params.meetupKey}`
+// 	}
+// },
+// mem: {}
 
-  // params.mem.events = findEvents(params.api.eventUrl(), params.dateLimit);
 
-  // params.mem.events.then(x => renderMap(params.local, x));
+// params.mem.events = findEvents(params.api.eventUrl(), params.dateLimit);
 
-  // This React class encapsulates the leaflet map
-};
+// params.mem.events.then(x => renderMap(params.local, x));
+
+// This React class encapsulates the leaflet map
+;
 var Map = function (_React$Component) {
   _inherits(Map, _React$Component);
 
@@ -231,8 +246,8 @@ var Map = function (_React$Component) {
     };
 
     _this.state = {
-      radius: 25,
-      dateLimit: Date.now() + 1 * 24 * 60 * 60000,
+      radius: 12,
+      dateLimit: Date.now() + 0.5 * 24 * 60 * 60000,
       searchLoc: '',
       api: {
         key: '457b71183481b13752d69755d97632',
