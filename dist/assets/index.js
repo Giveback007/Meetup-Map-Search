@@ -8,23 +8,104 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-//@prepros-append babel/helpers.js
-//@prepros-append babel/getEventData.js
+//@prepros-append babel/helper_and_params.js
+//@prepros-append babel/time.js
+//@prepros-append babel/async.js
 //@prepros-append babel/map.js
 //@prepros-append babel/controls.js
 //@prepros-append babel/start.js
 
-// -- helpers -- //
+// const params =
+// {
+// 	totalMonths: 1 // no including this month
+// }
+
 var help = {};
 
-help.ajaxCall = function (url) {
+help.clone = function (obj) {
+  var clone = JSON.stringify(obj);
+  return JSON.parse(clone);
+};
+
+var time = {};
+
+time.months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+time.daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+time.getTimeObj = function (unix, offset) {
+  var getTimeString = function getTimeString(t) {
+    var hour = (t.hour + 11) % 12 + 1;
+    var amPm = t.hour < 12 ? 'am' : 'pm';
+    var min = t.min === 0 ? '00' : t.min;
+    var full = time.daysOfWeek[t.weekDay] + ', ' + time.months[t.month] + (' ' + t.day + ', ' + hour + ':' + min + ' ' + amPm);
+    return full;
+  };
+
+  var date = new Date(unix - offset);
+
+  var obj = {
+    unix: unix,
+    offset: offset,
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth(),
+    day: date.getUTCDate(),
+    hour: date.getUTCHours(),
+    min: date.getUTCMinutes(),
+    weekDay: date.getUTCDay()
+  };
+  obj.timeString = getTimeString(obj);
+  obj.key = [obj.year + '-' + time.months[obj.month], '' + obj.day];
+
+  return obj;
+};
+
+time.getMonthLimit = function (monthsFromNow) {
+  var date = new Date();
+  var m = date.getUTCMonth();
+  var y = date.getUTCFullYear();
+
+  var lastDay = new Date(y, m + monthsFromNow + 1, 0);
+  var end = lastDay.setHours(23, 59, 59, 999);
+
+  return end;
+};
+
+time.createCalendarObj = function (limit) {
+  var tracker = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+  var calendar = {};
+  var months = [];
+  var oneDay = 24 * 60 * 60 * 1000;
+  var today = new Date().setUTCHours(23, 59, 59, 999);
+
+  var lastDay = new Date(limit).setUTCHours(23, 59, 59, 999);
+  var numDays = (lastDay - today) / oneDay;
+
+  var now = time.getTimeObj(new Date(), new Date().getTimezoneOffset() * 60000);
+  for (var i = 0; i < numDays; i++) {
+    var refDay = new Date(now.year, now.month, now.day + i);
+    var m = refDay.getFullYear() + '-' + time.months[refDay.getMonth()];
+    var d = '' + refDay.getDate();
+    if (!calendar[m]) {
+      calendar[m] = {};months.push(m);
+    }
+
+    tracker ? calendar[m][d] = false : calendar[m][d] = [];
+  }
+  return { calendar: calendar, months: months };
+};
+
+var async = {};
+// -- ajaxCall -- //
+async.ajaxCall = function (url) {
   return new Promise(function (resolve, reject) {
     $.ajax({
       url: url,
       type: 'get',
       dataType: "jsonp",
       success: function success(x) {
-        // console.log('ajax', x); // temp
+        console.log('ajax', x); // temp
         resolve(x);
       },
       error: function error(err) {
@@ -33,8 +114,10 @@ help.ajaxCall = function (url) {
     });
   });
 };
+// -- ajaxCall -- //
 
-help.limiter = function (meta) {
+// -- limiter -- //
+async.limiter = function (meta) {
   var limit = Number(meta['X-RateLimit-Remaining']);
   var reset = Number(meta['X-RateLimit-Reset']);
   console.log('limit left ' + limit, ', reset ' + reset // temp
@@ -47,73 +130,10 @@ help.limiter = function (meta) {
     }
   });
 };
-
-help.months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-help.daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-help.getTimeObj = function (time) {
-  var date = new Date(time);
-  return {
-    milis: time,
-    year: date.getUTCFullYear(),
-    month: date.getUTCMonth(),
-    day: date.getUTCDate(),
-    hour: date.getUTCHours(),
-    min: date.getUTCMinutes(),
-    weekDay: date.getUTCDay()
-  };
-};
-
-help.getTimeString = function (time) {
-  var hour = (time.hour + 11) % 12 + 1;
-  var amPm = time.hour < 12 ? 'am' : 'pm';
-  var min = time.min === 0 ? '00' : time.min;
-  var full = help.daysOfWeek[time.weekDay] + ', ' + help.months[time.month] + (' ' + time.day + ', ' + hour + ':' + min + amPm);
-  return full;
-};
-
-help.getMonthLimit = function (monthsFromNow) {
-  var date = new Date();
-  var m = date.getUTCMonth();
-  var y = date.getUTCFullYear();
-
-  var lastDay = new Date(y, m + monthsFromNow + 1, 0);
-  var end = lastDay.setHours(23, 59, 59, 999);
-
-  return end;
-};
-
-help.createCalendarObj = function (limit) {
-  var calendar = {};
-  var months = [];
-  var oneDay = 24 * 60 * 60 * 1000;
-  var today = new Date().setUTCHours(23, 59, 59, 999);
-
-  var lastDay = new Date(limit).setUTCHours(23, 59, 59, 999);
-  var numDays = (lastDay - today) / oneDay;
-
-  var now = help.getTimeObj(new Date() - new Date().getTimezoneOffset() * 60000);
-  for (var i = 0; i < numDays; i++) {
-    var refDay = new Date(now.year, now.month, now.day + i);
-    var m = refDay.getFullYear() + '-' + help.months[refDay.getMonth()];
-    var d = '' + refDay.getDate();
-    if (!calendar[m]) {
-      calendar[m] = {};months.push(m);
-    }
-    calendar[m][d] = [];
-  }
-  return { calendar: calendar, months: months };
-};
-
-help.cloneObj = function (obj) {
-  var clone = JSON.stringify(obj);
-  return JSON.parse(clone);
-};
-// -- helpers -- //
+// -- limiter -- //
 
 // -- geoLocate -- //
-var geoLocate = function geoLocate() {
+async.geoLocate = function () {
   return new Promise(function (resolve, reject) {
     resolve([41.957819, -87.994403]); // temp
     var options = {
@@ -134,39 +154,39 @@ var geoLocate = function geoLocate() {
 // -- geoLocate -- //
 
 // -- findEvents -- //
-var findEvents = function findEvents(url, allEvents) {
+async.findEvents = function (url, allEvents) {
   return new Promise(function (resolve, reject) {
     var parseData = function parseData(dt) {
-      var events = help.cloneObj(allEvents);
-      // Make the data more usable
+      var events = help.clone(allEvents);
+      // Forms the data
       var data = dt.data.map(function (x) {
         var obj = x;
         obj.loc = obj.venue ? [obj.venue.lat, obj.venue.lon] : null;
-        obj.time = help.getTimeObj(obj.time + obj.utc_offset);
+        obj.time = time.getTimeObj(obj.time, obj.utc_offset * -1);
         obj.duration = obj.duration / 60000 || null;
         delete obj.utc_offset;
         delete obj.venue;
         return obj;
       });
 
-      // Put the data in calendar form
+      // Merges the data into existing calendar form
       data.map(function (x) {
-        var m = x.time.year + '-' + help.months[x.time.month];
-        var d = '' + x.time.day;
-        if (!events[m]) {
+        var key = x.time.key;
+        if (!events[key[0]]) {
           return;
         }
-        events[m][d].push(x);
+        events[key[0]][key[1]].push(x);
       });
 
       var obj = {};
       obj.events = events;
       obj.meta = dt.meta;
+      obj.lastEventTime = data[data.length - 1].time;
 
-      resolve(obj);
+      return obj; // <-
     };
 
-    help.ajaxCall(url).then(function (x) {
+    async.ajaxCall(url).then(function (x) {
       return resolve(parseData(x));
     });
   });
@@ -233,7 +253,7 @@ var Map = function (_React$Component) {
           html: '<div class=\'marker-img\' style=\'background-image: url(' + img + ')\'></div>'
         });
 
-        var marker = new L.marker(loc, { icon: icon }).bindPopup('<b>' + x.group.name + '</b>\n          <br/>' + x.name + '\n          <br/><i class="fa fa-clock-o" aria-hidden="true"></i>\n            ' + help.getTimeString(x.time) + '\n          <br/><a href=\'' + x.link + '\' target=\'_blank\'>More Info</a>', { offset: [0, -5] }).bindTooltip('' + x.group.name, {
+        var marker = new L.marker(loc, { icon: icon }).bindPopup('<b>' + x.group.name + '</b>\n          <br/>' + x.name + '\n          <br/><i class="fa fa-clock-o" aria-hidden="true"></i>\n            ' + time.timeString + '\n          <br/><a href=\'' + x.link + '\' target=\'_blank\'>More Info</a>', { offset: [0, -5] }).bindTooltip('' + x.group.name, {
           offset: [0, -20],
           direction: 'top'
         });
@@ -272,6 +292,7 @@ var Map = function (_React$Component) {
     key: 'render',
     value: function render() {
       if (this.props.isReady) {
+        console.log('render -> map');
         this.center(this.props.center, this.props.radius);
         this.putEventsOnMap(this.props.events);
       }
@@ -340,20 +361,79 @@ var Controls = function (_React$Component2) {
     _this2.filterEvents = function () {
       var opt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2.state.filter;
 
-      var events = _this2.state.events[opt.day[0]][opt.day[1] + 1]; // -- temp TODO +1 remove
+      var events = _this2.state.events[opt.day[0]][opt.day[1]];
       var filtered = void 0;
       if (!opt.categories[0]) {
         filtered = events;
       } else {
         // TODO filter events by id#
       }
-      _this2.setState({ onMapEvents: filtered });
+      _this2.setState({ onMapEvents: filtered, isReady: false });
+    };
+
+    _this2.findEventsLoop = function (data, limit) {
+      var meta = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _this2.state.meta;
+
+      var count = 0; // temp
+      var loop = function loop(obj) {
+        count++; // temp
+        _this2.filterEvents(); // TODO triger after firstDay is loaded
+        _this2.setState({ events: obj.events, meta: obj.meta });
+        if (obj.meta.next_link && obj.lastEventTime.unix < limit.unix) {
+          async.limiter(obj.meta).then(function () {
+            console.log('loop-' + count);
+            return async.findEvents(obj.meta.next_link + '&key=&{this.state.api.key}', _this2.state.events);
+          }).then(function (x) {
+            loop(x);
+          });
+        } else {
+          _this2.setState({ loadDone: true, isReady: true });
+          console.log('loop-done, set all days to loaded'); // TODO
+          console.log(_this2.state.events); // TODO temp
+          return;
+        }
+      };
+      // triger the loop
+      async.findEvents(_this2.state.api.getUrl(data), _this2.state.events).then(function (x) {
+        loop(x);
+        console.log('isReady: true');
+        _this2.setState({ isReady: true }); // TODO temp only triger when firsDay done
+      });
+    };
+
+    _this2.shouldRender = function () {
+      // TODO create more conditionals
+      return _this2.state.isReady ? true : false;
+    };
+
+    _this2.componentDidMount = function () {
+      var end = time.getMonthLimit(_this2.state.loadMonths);
+      var calendarObj = time.createCalendarObj(end);
+      var tracker = time.createCalendarObj(end, true);
+      var today = time.getTimeObj(new Date(), new Date().getTimezoneOffset() * 60000);
+      var lastDay = new Date(end);
+      lastDay = time.getTimeObj(lastDay, lastDay.getTimezoneOffset() * 60000);
+      _this2.setState({
+        events: calendarObj.calendar,
+        dayIsLoaded: tracker.calendar,
+        months: calendarObj.months,
+        today: today,
+        lastDay: lastDay,
+        filter: { day: [calendarObj.months[0], today.day], categories: [] }
+      });
+
+      async.geoLocate().then(function (x) {
+        _this2.setState({ searchLoc: x, isReady: true });
+        return _this2.findEventsLoop(x, _this2.state.lastDay);
+      });
     };
 
     _this2.state = {
-      isReady: false,
-      radius: 100, // max 100.00
+      isReady: false, // signal to Map if ready to render
+      loadDone: false,
+      radius: 10, // max 100.00 (miles)
       searchLoc: [38.366473, -96.262056],
+      loadMonths: 0, // 0 loads this month only
       api: {
         key: '457b71183481b13752d69755d97632',
         omit: 'description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url',
@@ -363,8 +443,10 @@ var Controls = function (_React$Component2) {
         }
       },
       events: {},
+      dayIsLoaded: {},
       months: [],
       today: {},
+      lastDay: {},
       filter: { day: [], categories: [] },
       onMapEvents: [],
       meta: {}
@@ -374,31 +456,13 @@ var Controls = function (_React$Component2) {
   }
 
   _createClass(Controls, [{
-    key: 'componentDidMount',
-    value: function componentDidMount() {
-      var _this3 = this;
-
-      var calendarObj = help.createCalendarObj(help.getMonthLimit(3));
-      var today = help.getTimeObj(new Date() - new Date().getTimezoneOffset() * 60000);
-      this.setState({
-        events: calendarObj.calendar,
-        months: calendarObj.months,
-        today: today,
-        filter: { day: [calendarObj.months[0], today.day], categories: [] }
-      });
-
-      geoLocate().then(function (x) {
-        _this3.setState({ searchLoc: x, isReady: true });
-        return findEvents(_this3.state.api.getUrl(x), _this3.state.events); // TODO create a native function
-      }).then(function (x) {
-        _this3.setState({ events: x.events, meta: x.meta });
-        _this3.filterEvents();
-      });
-    }
-  }, {
     key: 'render',
     value: function render() {
-      console.log('render -> this.state.onMapEvents', this.state.onMapEvents);
+      // console.log('render -> this.state.onMapEvents', this.state.onMapEvents);
+      if (this.shouldRender()) {
+        this.filterEvents();
+        // this.setState({isReady: false})
+      }
       return React.createElement(
         'div',
         null,

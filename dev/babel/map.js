@@ -95,7 +95,7 @@ class Map extends React.Component
           `<b>${x.group.name}</b>
           <br/>${x.name}
           <br/><i class="fa fa-clock-o" aria-hidden="true"></i>
-            ${help.getTimeString(x.time)}
+            ${time.timeString}
           <br/><a href='${x.link}' target='_blank'>More Info</a>`,
           {offset: [0, -5]}
         )
@@ -121,6 +121,7 @@ class Map extends React.Component
   render()
   {
     if (this.props.isReady) {
+      console.log('render -> map');
       this.center(this.props.center, this.props.radius);
       this.putEventsOnMap(this.props.events)
     }

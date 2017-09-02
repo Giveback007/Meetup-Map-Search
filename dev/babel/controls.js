@@ -6,9 +6,11 @@ class Controls extends React.Component
 
     this.state =
     {
-      isReady: false,
-      radius: 100, // max 100.00
+      isReady: false, // signal to Map if ready to render
+      loadDone: false,
+      radius: 10, // max 100.00 (miles)
       searchLoc: [38.366473, -96.262056],
+      loadMonths: 0, // 0 loads this month only
       api:
       {
         key: '457b71183481b13752d69755d97632',
@@ -21,8 +23,10 @@ class Controls extends React.Component
           `&omit=${this.state.api.omit}&key=${this.state.api.key}`,
       },
       events: {},
+      dayIsLoaded: {},
       months: [],
       today: {},
+      lastDay: {},
       filter: {day: [], categories: []},
       onMapEvents: [],
       meta: {},
@@ -32,49 +36,101 @@ class Controls extends React.Component
 
   filterEvents = (opt = this.state.filter) =>
   {
-    let events = this.state.events[opt.day[0]][opt.day[1] + 1]; // -- temp TODO +1 remove
+    let events = this.state.events[opt.day[0]][opt.day[1]];
     let filtered;
     if (!opt.categories[0]) {filtered = events}
     else
     {
       // TODO filter events by id#
     }
-    this.setState({onMapEvents: filtered})
+    this.setState({onMapEvents: filtered, isReady: false})
   }
 
-
-
-  componentDidMount()
+  findEventsLoop = (data, limit, meta = this.state.meta) =>
   {
-    let calendarObj = help.createCalendarObj(help.getMonthLimit(3));
-    let today = help.getTimeObj(
-      new Date() - new Date().getTimezoneOffset() * 60000
+    let count = 0; // temp
+    const loop = (obj) =>
+    {
+      count++; // temp
+      this.filterEvents(); // TODO triger after firstDay is loaded
+      this.setState({events: obj.events, meta: obj.meta});
+      if (obj.meta.next_link && obj.lastEventTime.unix < limit.unix)
+      {
+        async.limiter(obj.meta)
+        .then(() => {
+          console.log('loop-'+count);
+          return async.findEvents(
+            obj.meta.next_link + `&key=&{this.state.api.key}`,
+            this.state.events
+          );
+        })
+        .then(x => {
+          loop(x);
+        });
+      }
+      else
+      {
+        this.setState({loadDone: true, isReady: true});
+        console.log('loop-done, set all days to loaded'); // TODO
+        console.log(this.state.events); // TODO temp
+        return;
+      }
+    }
+    // triger the loop
+    async.findEvents(this.state.api.getUrl(data), this.state.events)
+      .then(x =>
+      {
+        loop(x);
+        console.log('isReady: true');
+        this.setState({isReady: true}); // TODO temp only triger when firsDay done
+      });
+  }
+
+  shouldRender = () =>
+  {
+    // TODO create more conditionals
+    return this.state.isReady ? true : false;
+  }
+
+  componentDidMount = () =>
+  {
+    let end = time.getMonthLimit(this.state.loadMonths);
+    let calendarObj = time.createCalendarObj(end);
+    let tracker = time.createCalendarObj(end, true);
+    let today = time.getTimeObj(
+      new Date(), new Date().getTimezoneOffset() * 60000
+    );
+    let lastDay = new Date(end);
+    lastDay = time.getTimeObj(
+      lastDay, lastDay.getTimezoneOffset() * 60000
     );
     this.setState(
       {
         events: calendarObj.calendar,
+        dayIsLoaded: tracker.calendar,
         months: calendarObj.months,
         today: today,
+        lastDay: lastDay,
         filter: {day: [calendarObj.months[0], today.day], categories: []}
       }
     );
 
-    geoLocate()
+    async.geoLocate()
       .then(x =>
       {
         this.setState({searchLoc: x, isReady: true});
-        return findEvents(this.state.api.getUrl(x), this.state.events); // TODO create a native function
-      })
-      .then(x =>
-      {
-        this.setState({events: x.events, meta: x.meta});
-        this.filterEvents();
+        return this.findEventsLoop(x, this.state.lastDay);
       });
   }
 
   render()
   {
-    console.log('render -> this.state.onMapEvents', this.state.onMapEvents);
+    // console.log('render -> this.state.onMapEvents', this.state.onMapEvents);
+    if (this.shouldRender())
+    {
+      this.filterEvents();
+      // this.setState({isReady: false})
+    }
     return(
       <div>
         <Map
