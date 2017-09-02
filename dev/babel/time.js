@@ -42,6 +42,10 @@ time.getTimeObj = (unix, offset) =>
 	return obj;
 }
 
+time.now = time.getTimeObj(
+	new Date(), new Date().getTimezoneOffset() * 60000
+);
+
 time.getMonthLimit = (monthsFromNow) =>
 {
 	let date = new Date();

@@ -20,12 +20,15 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 // 	totalMonths: 1 // no including this month
 // }
 
-var help = {};
+// const help = {};
 
-help.clone = function (obj) {
+var clone = function clone(obj) {
   var clone = JSON.stringify(obj);
   return JSON.parse(clone);
 };
+
+// async.ajaxCall('https://api.meetup.com/2/categories?&sign=true&photo-host=public&key=457b71183481b13752d69755d97632')
+// 	.then(x => console.log(x.results))
 
 var time = {};
 
@@ -59,6 +62,8 @@ time.getTimeObj = function (unix, offset) {
 
   return obj;
 };
+
+time.now = time.getTimeObj(new Date(), new Date().getTimezoneOffset() * 60000);
 
 time.getMonthLimit = function (monthsFromNow) {
   var date = new Date();
@@ -105,7 +110,7 @@ async.ajaxCall = function (url) {
       type: 'get',
       dataType: "jsonp",
       success: function success(x) {
-        console.log('ajax', x); // temp
+        // console.log('ajax', x); // temp
         resolve(x);
       },
       error: function error(err) {
@@ -120,8 +125,8 @@ async.ajaxCall = function (url) {
 async.limiter = function (meta) {
   var limit = Number(meta['X-RateLimit-Remaining']);
   var reset = Number(meta['X-RateLimit-Reset']);
-  console.log('limit left ' + limit, ', reset ' + reset // temp
-  );return new Promise(function (resolve, reject) {
+  // console.log('limit left ' + limit, ', reset ' + reset) // temp
+  return new Promise(function (resolve, reject) {
     if (limit <= 1) {
       console.log('limit reached, ' + reset + ' seconds until reset'); // temp
       setTimeout(resolve, reset * 1000 + 500);
@@ -157,7 +162,7 @@ async.geoLocate = function () {
 async.findEvents = function (url, allEvents) {
   return new Promise(function (resolve, reject) {
     var parseData = function parseData(dt) {
-      var events = help.clone(allEvents);
+      var events = clone(allEvents);
       // Forms the data
       var data = dt.data.map(function (x) {
         var obj = x;
@@ -203,19 +208,22 @@ var Map = function (_React$Component) {
 
     var _this = _possibleConstructorReturn(this, (Map.__proto__ || Object.getPrototypeOf(Map)).call(this, props));
 
+    _this.centerMarker = L.marker();
+    _this.centerRadius = L.circle();
     _this.markerCluster = L.markerClusterGroup();
 
     _this.initMap = function () {
       _this.mainMap = L.map('map').setView([38.366473, -96.262056], 5);
-      var openstreetmaps = new L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      var openstreetmaps = new L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="http://openstreetmap.org/">' + 'OpenStreetMap</a> contributors'
       });
       _this.mainMap.addLayer(openstreetmaps);
     };
 
-    _this.clearMap = function () {};
+    _this.newCenter = function (loc, rds) {
+      _this.mainMap.removeLayer(_this.centerMarker);
+      _this.mainMap.removeLayer(_this.centerRadius);
 
-    _this.center = function (loc, rds) {
       _this.mainMap.flyTo(loc, 10, { duration: 3 });
 
       var centerIcon = L.divIcon({
@@ -240,6 +248,9 @@ var Map = function (_React$Component) {
     };
 
     _this.putEventsOnMap = function (events) {
+      _this.markerCluster.eachLayer(function (x) {
+        return _this.markerCluster.removeLayer(x);
+      });
       events.map(function (x) {
         var loc = x.loc ? x.loc : [x.group.lat, x.group.lon];
         if (!loc[0] && !loc[1]) {
@@ -253,7 +264,7 @@ var Map = function (_React$Component) {
           html: '<div class=\'marker-img\' style=\'background-image: url(' + img + ')\'></div>'
         });
 
-        var marker = new L.marker(loc, { icon: icon }).bindPopup('<b>' + x.group.name + '</b>\n          <br/>' + x.name + '\n          <br/><i class="fa fa-clock-o" aria-hidden="true"></i>\n            ' + time.timeString + '\n          <br/><a href=\'' + x.link + '\' target=\'_blank\'>More Info</a>', { offset: [0, -5] }).bindTooltip('' + x.group.name, {
+        var marker = new L.marker(loc, { icon: icon }).bindPopup('<b>' + x.group.name + '</b>\n          <br/>' + x.name + '\n          <br/><i class="fa fa-clock-o" aria-hidden="true"></i>\n            ' + x.time.timeString + '\n          <br/><a href=\'' + x.link + '\' target=\'_blank\'>More Info</a>', { offset: [0, -5] }).bindTooltip('' + x.group.name, {
           offset: [0, -20],
           direction: 'top'
         });
@@ -269,13 +280,19 @@ var Map = function (_React$Component) {
 
   // -- initMap -- //
 
-  // -- clearMap -- //
-
-  // -- clearMap -- //
-
   // -- newSearch -- //
 
   // -- newSearch -- //
+
+  ////////////////////////////////////
+  // Getting the bounds of a cluster
+  //
+  // When you receive an event from a cluster you can query it for the bounds.
+  //
+  // markers.on('clusterclick', function (a) {
+  // 	var latLngBounds = a.layer.getBounds();
+  // });
+  ////////////////////////////////////
 
   // -- putEventsOnMap -- //
 
@@ -291,9 +308,11 @@ var Map = function (_React$Component) {
   }, {
     key: 'render',
     value: function render() {
-      if (this.props.isReady) {
-        console.log('render -> map');
-        this.center(this.props.center, this.props.radius);
+      if (this.props.center.length) {
+        this.newCenter(this.props.center, this.props.radius);
+      }
+      if (this.props.events.length) {
+        console.log('render -> map', this.props.events);
         this.putEventsOnMap(this.props.events);
       }
       return null;
@@ -302,53 +321,6 @@ var Map = function (_React$Component) {
 
   return Map;
 }(React.Component);
-/////////////////////
-
-
-// -- renderEventsOnMap -- //
-// function renderEventsOnMap(events)
-// {
-//   // -- Create Markers From Events Data -- //
-//   let markerCluster = L.markerClusterGroup();
-//   events.map(x =>
-//   {
-//     let loc = x.loc ? x.loc : [x.group.lat, x.group.lon];
-//     if (!loc[0] && !loc[1]) {loc = [x.group.lat, x.group.lon]}
-//     let img = x.group.photo ?
-//       x.group.photo.thumb_link : 'assets/imgs/meetup_logo.png';
-//
-//     let icon = L.divIcon(
-//     {
-//       className: 'marker',
-//       iconSize: new L.Point(50, 50),
-//       html: `<div class='marker-img' style='background-image: url(${img})'></div>`
-//     });
-//
-//     let marker = new L.marker(
-//       loc,
-//       {icon: icon}
-//     )
-//       .bindPopup(
-//         `<b>${x.group.name}</b>
-//         <br/>${x.name}
-//         <br/><i class="fa fa-clock-o" aria-hidden="true"></i>
-//           ${getFullTime(x.time)}
-//         <br/><a href='${x.link}' target='_blank'>More Info</a>`,
-//         {offset: [0, -5]}
-//       )
-//       .bindTooltip(
-//         `${x.group.name}`,
-//         {
-//         offset: [0, -20],
-//         direction: 'top'
-//         }
-//       );
-//
-//     markerCluster.addLayer(marker);
-//   });
-//   this.mainMap.addLayer(markerCluster);
-// }
-// -- renderEventsOnMap -- //
 
 var Controls = function (_React$Component2) {
   _inherits(Controls, _React$Component2);
@@ -358,18 +330,28 @@ var Controls = function (_React$Component2) {
 
     var _this2 = _possibleConstructorReturn(this, (Controls.__proto__ || Object.getPrototypeOf(Controls)).call(this, props));
 
+    _this2.counter = 2;
+
     _this2.filterEvents = function () {
       var opt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2.state.filter;
 
       var events = _this2.state.events[opt.day[0]][opt.day[1]];
       var filtered = void 0;
-      if (!opt.categories[0]) {
+      if (!opt.categories.length) {
         filtered = events;
       } else {
         // TODO filter events by id#
       }
-      _this2.setState({ onMapEvents: filtered, isReady: false });
+
+      _this2.setState({ onMapEvents: filtered });
+      _this2.counter++;
+      console.log(["2017-Sep", _this2.counter]);
+      setTimeout(function () {
+        _this2.filterEvents({ day: ["2017-Sep", _this2.counter], categories: [] });
+      }, 5000);
     };
+
+    _this2.newSearch = function () {};
 
     _this2.findEventsLoop = function (data, limit) {
       var meta = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _this2.state.meta;
@@ -377,7 +359,6 @@ var Controls = function (_React$Component2) {
       var count = 0; // temp
       var loop = function loop(obj) {
         count++; // temp
-        _this2.filterEvents(); // TODO triger after firstDay is loaded
         _this2.setState({ events: obj.events, meta: obj.meta });
         if (obj.meta.next_link && obj.lastEventTime.unix < limit.unix) {
           async.limiter(obj.meta).then(function () {
@@ -387,7 +368,8 @@ var Controls = function (_React$Component2) {
             loop(x);
           });
         } else {
-          _this2.setState({ loadDone: true, isReady: true });
+          // this.setState({loadDone: true});
+          _this2.filterEvents(); // TODO triger after firstDay is loaded
           console.log('loop-done, set all days to loaded'); // TODO
           console.log(_this2.state.events); // TODO temp
           return;
@@ -396,56 +378,51 @@ var Controls = function (_React$Component2) {
       // triger the loop
       async.findEvents(_this2.state.api.getUrl(data), _this2.state.events).then(function (x) {
         loop(x);
-        console.log('isReady: true');
-        _this2.setState({ isReady: true }); // TODO temp only triger when firsDay done
+        // this.setState({isReady: true}); // TODO temp only triger when firsDay done
       });
-    };
-
-    _this2.shouldRender = function () {
-      // TODO create more conditionals
-      return _this2.state.isReady ? true : false;
     };
 
     _this2.componentDidMount = function () {
       var end = time.getMonthLimit(_this2.state.loadMonths);
       var calendarObj = time.createCalendarObj(end);
       var tracker = time.createCalendarObj(end, true);
-      var today = time.getTimeObj(new Date(), new Date().getTimezoneOffset() * 60000);
       var lastDay = new Date(end);
       lastDay = time.getTimeObj(lastDay, lastDay.getTimezoneOffset() * 60000);
       _this2.setState({
         events: calendarObj.calendar,
         dayIsLoaded: tracker.calendar,
         months: calendarObj.months,
-        today: today,
         lastDay: lastDay,
-        filter: { day: [calendarObj.months[0], today.day], categories: [] }
+        filter: { day: [calendarObj.months[0], time.now.day], categories: [] }
       });
 
       async.geoLocate().then(function (x) {
-        _this2.setState({ searchLoc: x, isReady: true });
+        var temp = clone(_this2.state.search);
+        temp.loc = x;
+        _this2.setState({ search: temp });
         return _this2.findEventsLoop(x, _this2.state.lastDay);
       });
     };
 
     _this2.state = {
-      isReady: false, // signal to Map if ready to render
-      loadDone: false,
-      radius: 10, // max 100.00 (miles)
-      searchLoc: [38.366473, -96.262056],
+      // loadDone: false,
+      search: {
+        radius: 10, // max 100.00 (miles)
+        loc: [] // [38.366473, -96.262056]
+      },
       loadMonths: 0, // 0 loads this month only
       api: {
         key: '457b71183481b13752d69755d97632',
         omit: 'description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url',
         getUrl: function getUrl() {
-          var loc = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2.state.searchLoc;
-          return 'https://api.meetup.com/find/events?' + '&sign=true&photo-host=public&' + ('lat=' + loc[0] + '&lon=' + loc[1]) + ('&radius=' + _this2.state.radius + '&fields=group_photo,group_category') + ('&omit=' + _this2.state.api.omit + '&key=' + _this2.state.api.key);
+          var loc = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2.state.search.loc;
+          return 'https://api.meetup.com/find/events?' + '&sign=true&photo-host=public&' + ('lat=' + loc[0] + '&lon=' + loc[1]) + ('&radius=' + _this2.state.search.radius + '&fields=group_photo,group_category') + ('&omit=' + _this2.state.api.omit + '&key=' + _this2.state.api.key);
         }
       },
       events: {},
       dayIsLoaded: {},
       months: [],
-      today: {},
+      today: time.now,
       lastDay: {},
       filter: { day: [], categories: [] },
       onMapEvents: [],
@@ -459,18 +436,20 @@ var Controls = function (_React$Component2) {
     key: 'render',
     value: function render() {
       // console.log('render -> this.state.onMapEvents', this.state.onMapEvents);
-      if (this.shouldRender()) {
-        this.filterEvents();
-        // this.setState({isReady: false})
+      if (this.state.onMapEvents.length) {
+        this.setState({ onMapEvents: [] });
+      }
+      if (this.state.search.loc.length) {
+        var rad = this.state.search.radius;
+        this.setState({ search: { radius: rad, loc: [] } });
       }
       return React.createElement(
         'div',
         null,
         React.createElement(Map, {
-          isReady: this.state.isReady,
           events: this.state.onMapEvents,
-          center: this.state.searchLoc,
-          radius: this.state.radius
+          center: this.state.search.loc,
+          radius: this.state.search.radius
         })
       );
     }

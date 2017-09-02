@@ -6,8 +6,8 @@ class Map extends React.Component
     super(props);
   }
   mainMap;
-  centerMarker;
-  centerRadius;
+  centerMarker = L.marker();
+  centerRadius = L.circle();
   markerCluster = L.markerClusterGroup();
   // -- initMap -- //
   initMap = () =>
@@ -15,7 +15,7 @@ class Map extends React.Component
     this.mainMap = L.map('map')
       .setView([38.366473, -96.262056], 5);
     let openstreetmaps = new L.tileLayer(
-      'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       {
         attribution: '&copy; <a href="http://openstreetmap.org/">'
         +'OpenStreetMap</a> contributors'
@@ -25,16 +25,12 @@ class Map extends React.Component
   }
   // -- initMap -- //
 
-  // -- clearMap -- //
-  clearMap = () =>
-  {
-
-  }
-  // -- clearMap -- //
-
   // -- newSearch -- //
-  center = (loc, rds) =>
+  newCenter = (loc, rds) =>
   {
+    this.mainMap.removeLayer(this.centerMarker);
+    this.mainMap.removeLayer(this.centerRadius);
+
     this.mainMap.flyTo(loc, 10, {duration: 3});
 
     let centerIcon = L.divIcon(
@@ -70,9 +66,20 @@ class Map extends React.Component
   }
   // -- newSearch -- //
 
+  ////////////////////////////////////
+  // Getting the bounds of a cluster
+  //
+  // When you receive an event from a cluster you can query it for the bounds.
+  //
+  // markers.on('clusterclick', function (a) {
+  // 	var latLngBounds = a.layer.getBounds();
+  // });
+  ////////////////////////////////////
+
   // -- putEventsOnMap -- //
   putEventsOnMap = (events) =>
   {
+    this.markerCluster.eachLayer((x) => this.markerCluster.removeLayer(x));
     events.map(x =>
     {
       let loc = x.loc ? x.loc : [x.group.lat, x.group.lon];
@@ -95,7 +102,7 @@ class Map extends React.Component
           `<b>${x.group.name}</b>
           <br/>${x.name}
           <br/><i class="fa fa-clock-o" aria-hidden="true"></i>
-            ${time.timeString}
+            ${x.time.timeString}
           <br/><a href='${x.link}' target='_blank'>More Info</a>`,
           {offset: [0, -5]}
         )
@@ -120,59 +127,16 @@ class Map extends React.Component
 
   render()
   {
-    if (this.props.isReady) {
-      console.log('render -> map');
-      this.center(this.props.center, this.props.radius);
-      this.putEventsOnMap(this.props.events)
+    if (this.props.center.length)
+    {
+      this.newCenter(this.props.center, this.props.radius);
+    }
+    if (this.props.events.length)
+    {
+      console.log('render -> map', this.props.events);
+      this.putEventsOnMap(this.props.events);
+
     }
     return (null);
   }
 }
-/////////////////////
-
-
-
-// -- renderEventsOnMap -- //
-// function renderEventsOnMap(events)
-// {
-//   // -- Create Markers From Events Data -- //
-//   let markerCluster = L.markerClusterGroup();
-//   events.map(x =>
-//   {
-//     let loc = x.loc ? x.loc : [x.group.lat, x.group.lon];
-//     if (!loc[0] && !loc[1]) {loc = [x.group.lat, x.group.lon]}
-//     let img = x.group.photo ?
-//       x.group.photo.thumb_link : 'assets/imgs/meetup_logo.png';
-//
-//     let icon = L.divIcon(
-//     {
-//       className: 'marker',
-//       iconSize: new L.Point(50, 50),
-//       html: `<div class='marker-img' style='background-image: url(${img})'></div>`
-//     });
-//
-//     let marker = new L.marker(
-//       loc,
-//       {icon: icon}
-//     )
-//       .bindPopup(
-//         `<b>${x.group.name}</b>
-//         <br/>${x.name}
-//         <br/><i class="fa fa-clock-o" aria-hidden="true"></i>
-//           ${getFullTime(x.time)}
-//         <br/><a href='${x.link}' target='_blank'>More Info</a>`,
-//         {offset: [0, -5]}
-//       )
-//       .bindTooltip(
-//         `${x.group.name}`,
-//         {
-//         offset: [0, -20],
-//         direction: 'top'
-//         }
-//       );
-//
-//     markerCluster.addLayer(marker);
-//   });
-//   this.mainMap.addLayer(markerCluster);
-// }
-// -- renderEventsOnMap -- //

@@ -11,7 +11,7 @@ async.ajaxCall = (url) =>
 			dataType: "jsonp",
 			success: (x) =>
 			{
-				console.log('ajax', x); // temp
+				// console.log('ajax', x); // temp
 				resolve(x)
 			},
 			error: (err) =>
@@ -28,7 +28,7 @@ async.limiter = (meta) =>
 {
 	let limit = Number(meta['X-RateLimit-Remaining']);
 	let reset = Number(meta['X-RateLimit-Reset']);
-	console.log('limit left ' + limit, ', reset ' + reset) // temp
+	// console.log('limit left ' + limit, ', reset ' + reset) // temp
 	return new Promise((resolve, reject) =>
 	{
 		if (limit <= 1)
@@ -77,7 +77,7 @@ async.findEvents = (url, allEvents) =>
 	{
 		const parseData = (dt) =>
 		{
-			let events = help.clone(allEvents);
+			let events = clone(allEvents);
 			// Forms the data
 			let data = dt.data.map(x =>
 			{
