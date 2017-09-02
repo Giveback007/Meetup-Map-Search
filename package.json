@@ -1,0 +1,19 @@
+{
+  "name": "finding-meetups",
+  "version": "1.0.0",
+  "description": "Out of frustration with using the meetup search to find events I decided to use the provided meetup api to see if I can solve this problem.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Giveback007/Finding-Meetups.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Giveback007/Finding-Meetups/issues"
+  },
+  "homepage": "https://github.com/Giveback007/Finding-Meetups#readme"
+}
