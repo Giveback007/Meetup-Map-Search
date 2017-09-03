@@ -10,6 +10,11 @@ time.months =
 
 time.daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+time.getKey = (y, m, d) =>
+{
+	return [`${y}-${m < 9 ? '0' + (m + 1): m + 1}`, `${d}`];
+}
+
 time.getTimeObj = (unix, offset) =>
 {
 	const getTimeString = (t) =>
@@ -37,7 +42,7 @@ time.getTimeObj = (unix, offset) =>
 		weekDay: date.getUTCDay(),
 	}
 	obj.timeString = getTimeString(obj);
-	obj.key = [`${obj.year}-${time.months[obj.month]}`, `${obj.day}`];
+	obj.key = time.getKey(obj.year, obj.month, obj.day);
 
 	return obj;
 }
@@ -48,37 +53,37 @@ time.now = time.getTimeObj(
 
 time.getMonthLimit = (monthsFromNow) =>
 {
-	let date = new Date();
-	let m = date.getUTCMonth();
-	let y = date.getUTCFullYear();
-
-	let lastDay = new Date(y, m + monthsFromNow + 1, 0);
+	let lastDay = new Date(time.now.year, time.now.month + monthsFromNow + 1, 0);
 	let end = lastDay.setHours(23, 59, 59, 999);
+	let offset = new Date(end).getTimezoneOffset() * 60000;
+	let obj = time.getTimeObj(end, offset);
 
-	return end;
+	return obj;
 }
 
+//
 time.createCalendarObj = (limit, tracker = false) =>
 {
+	let now = time.now;
   let calendar = {};
 	let months = [];
 	let oneDay = 24 * 60 * 60 * 1000;
-  let today = new Date().setUTCHours(23, 59, 59, 999);
 
-	let lastDay = new Date(limit).setUTCHours(23, 59, 59, 999);
+  let today = Date.UTC(now.year, now.month, now.day, 23, 59, 59, 999);
+	let lastDay = Date.UTC(limit.year, limit.month, limit.day, 23, 59, 59, 999);
+
 	let numDays = (lastDay - today) / oneDay;
 
-	let now = time.getTimeObj(
-    new Date(), new Date().getTimezoneOffset() * 60000
-  );
-	for (let i = 0; i < numDays; i++)
+	for (let i = 0; i <= numDays; i++)
 	{
 		let refDay = new Date(now.year, now.month, now.day + i);
-		let m = `${refDay.getFullYear()}-${time.months[refDay.getMonth()]}`
-		let d = `${refDay.getDate()}`
+		let key = time.getKey(refDay.getFullYear(), refDay.getMonth(), refDay.getDate())
+		let m = key[0];//`${refDay.getFullYear()}-${time.months[refDay.getMonth()]}`
+		let d = key[1];//`${refDay.getDate()}`
 		if (!calendar[m]) {calendar[m] = {}; months.push(m)}
 
 		tracker ? calendar[m][d] = false : calendar[m][d] = [];
 	}
+	calendar
   return {calendar, months};
 }

@@ -8,23 +8,46 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-//@prepros-append babel/helper_and_params.js
+//@prepros-append babel/helper.js
 //@prepros-append babel/time.js
 //@prepros-append babel/async.js
 //@prepros-append babel/map.js
 //@prepros-append babel/controls.js
 //@prepros-append babel/start.js
 
-// const params =
-// {
-// 	totalMonths: 1 // no including this month
-// }
+var task = {};
 
-// const help = {};
-
-var clone = function clone(obj) {
+task.clone = function (obj) {
   var clone = JSON.stringify(obj);
   return JSON.parse(clone);
+};
+
+task.updateDateTracker = function (tracker, limit) {
+  var loaded = task.clone(tracker);
+
+  var y = limit.year,
+      m = limit.month,
+      d = limit.day;
+  var stop = false;
+  while (!stop) {
+    d--;
+    if (d < 1) {
+      m--;d = 31;
+    }
+    if (m < 0) {
+      y--;m = 11;
+    }
+    var key = time.getKey(y, m, d);
+    if (tracker[key[0]] !== undefined) {
+      if (loaded[key[0]][key[1]] !== undefined) {
+        loaded[key[0]][key[1]] = true;
+      }
+    } else {
+      stop = true;
+    }
+  }
+
+  return loaded;
 };
 
 // async.ajaxCall('https://api.meetup.com/2/categories?&sign=true&photo-host=public&key=457b71183481b13752d69755d97632')
@@ -35,6 +58,10 @@ var time = {};
 time.months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 time.daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+time.getKey = function (y, m, d) {
+  return [y + '-' + (m < 9 ? '0' + (m + 1) : m + 1), '' + d];
+};
 
 time.getTimeObj = function (unix, offset) {
   var getTimeString = function getTimeString(t) {
@@ -58,7 +85,7 @@ time.getTimeObj = function (unix, offset) {
     weekDay: date.getUTCDay()
   };
   obj.timeString = getTimeString(obj);
-  obj.key = [obj.year + '-' + time.months[obj.month], '' + obj.day];
+  obj.key = time.getKey(obj.year, obj.month, obj.day);
 
   return obj;
 };
@@ -66,38 +93,40 @@ time.getTimeObj = function (unix, offset) {
 time.now = time.getTimeObj(new Date(), new Date().getTimezoneOffset() * 60000);
 
 time.getMonthLimit = function (monthsFromNow) {
-  var date = new Date();
-  var m = date.getUTCMonth();
-  var y = date.getUTCFullYear();
-
-  var lastDay = new Date(y, m + monthsFromNow + 1, 0);
+  var lastDay = new Date(time.now.year, time.now.month + monthsFromNow + 1, 0);
   var end = lastDay.setHours(23, 59, 59, 999);
+  var offset = new Date(end).getTimezoneOffset() * 60000;
+  var obj = time.getTimeObj(end, offset);
 
-  return end;
+  return obj;
 };
 
+//
 time.createCalendarObj = function (limit) {
   var tracker = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
+  var now = time.now;
   var calendar = {};
   var months = [];
   var oneDay = 24 * 60 * 60 * 1000;
-  var today = new Date().setUTCHours(23, 59, 59, 999);
 
-  var lastDay = new Date(limit).setUTCHours(23, 59, 59, 999);
+  var today = Date.UTC(now.year, now.month, now.day, 23, 59, 59, 999);
+  var lastDay = Date.UTC(limit.year, limit.month, limit.day, 23, 59, 59, 999);
+
   var numDays = (lastDay - today) / oneDay;
 
-  var now = time.getTimeObj(new Date(), new Date().getTimezoneOffset() * 60000);
-  for (var i = 0; i < numDays; i++) {
+  for (var i = 0; i <= numDays; i++) {
     var refDay = new Date(now.year, now.month, now.day + i);
-    var m = refDay.getFullYear() + '-' + time.months[refDay.getMonth()];
-    var d = '' + refDay.getDate();
+    var key = time.getKey(refDay.getFullYear(), refDay.getMonth(), refDay.getDate());
+    var m = key[0]; //`${refDay.getFullYear()}-${time.months[refDay.getMonth()]}`
+    var d = key[1]; //`${refDay.getDate()}`
     if (!calendar[m]) {
       calendar[m] = {};months.push(m);
     }
 
     tracker ? calendar[m][d] = false : calendar[m][d] = [];
   }
+  calendar;
   return { calendar: calendar, months: months };
 };
 
@@ -162,7 +191,7 @@ async.geoLocate = function () {
 async.findEvents = function (url, allEvents) {
   return new Promise(function (resolve, reject) {
     var parseData = function parseData(dt) {
-      var events = clone(allEvents);
+      var events = task.clone(allEvents);
       // Forms the data
       var data = dt.data.map(function (x) {
         var obj = x;
@@ -174,7 +203,7 @@ async.findEvents = function (url, allEvents) {
         return obj;
       });
 
-      // Merges the data into existing calendar form
+      // Merges the data into existing calendar
       data.map(function (x) {
         var key = x.time.key;
         if (!events[key[0]]) {
@@ -312,7 +341,7 @@ var Map = function (_React$Component) {
         this.newCenter(this.props.center, this.props.radius);
       }
       if (this.props.events.length) {
-        console.log('render -> map', this.props.events);
+        // console.log('render -> map', this.props.events); // temp
         this.putEventsOnMap(this.props.events);
       }
       return null;
@@ -330,114 +359,128 @@ var Controls = function (_React$Component2) {
 
     var _this2 = _possibleConstructorReturn(this, (Controls.__proto__ || Object.getPrototypeOf(Controls)).call(this, props));
 
+    _this2.params = {
+      lastDay: {},
+      loadMonths: 2, // 0 loads this month only
+      monthKeys: [] // are created in order -- use as refrence
+    };
+    _this2.api = {
+      key: '457b71183481b13752d69755d97632',
+      omit: 'description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url',
+      getUrl: function getUrl() {
+        var loc = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2.state.search.loc;
+        return 'https://api.meetup.com/find/events?' + '&sign=true&photo-host=public&' + ('lat=' + loc[0] + '&lon=' + loc[1]) + ('&radius=' + _this2.state.search.radius + '&fields=group_photo,group_category') + ('&omit=' + _this2.api.omit + '&key=' + _this2.api.key);
+      }
+    };
     _this2.counter = 2;
 
     _this2.filterEvents = function () {
-      var opt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2.state.filter;
+      var opt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2.state.filterParams;
 
       var events = _this2.state.events[opt.day[0]][opt.day[1]];
       var filtered = void 0;
       if (!opt.categories.length) {
         filtered = events;
-      } else {
-        // TODO filter events by id#
-      }
+      } else {}
+      // TODO filter events by id#
 
-      _this2.setState({ onMapEvents: filtered });
-      _this2.counter++;
-      console.log(["2017-Sep", _this2.counter]);
+
+      // console.log(["2017-Sep", this.counter]); // <- TEMP
+      _this2.setState({ setEventsOnMap: filtered });
+
+      _this2.counter++; // <- TEMP // TEMP \/
       setTimeout(function () {
-        _this2.filterEvents({ day: ["2017-Sep", _this2.counter], categories: [] });
-      }, 5000);
+        _this2.filterEvents({ day: ["2017-09", _this2.counter], categories: [] });
+      }, 5000); // TEMP
     };
 
-    _this2.newSearch = function () {};
+    _this2.newSearch = function () {
+      // TODO
+    };
+
+    _this2.setEventState = function (data) {
+
+      var tracker = task.updateDateTracker(_this2.state.dateIsLoaded, data.lastEventTime);
+
+      _this2.setState({
+        events: data.events,
+        meta: data.meta,
+        dateIsLoaded: tracker
+      });
+    };
 
     _this2.findEventsLoop = function (data, limit) {
-      var meta = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _this2.state.meta;
-
       var count = 0; // temp
       var loop = function loop(obj) {
         count++; // temp
-        _this2.setState({ events: obj.events, meta: obj.meta });
+        _this2.setEventState(obj);
         if (obj.meta.next_link && obj.lastEventTime.unix < limit.unix) {
           async.limiter(obj.meta).then(function () {
             console.log('loop-' + count);
-            return async.findEvents(obj.meta.next_link + '&key=&{this.state.api.key}', _this2.state.events);
+            return async.findEvents(obj.meta.next_link + ('&key=' + _this2.api.key), _this2.state.events);
           }).then(function (x) {
-            loop(x);
+            return loop(x);
           });
         } else {
-          // this.setState({loadDone: true});
+          // set all days to loaded
+          var end = task.clone(_this2.params.lastDay);
+          end.day++;
+          var tracker = task.updateDateTracker(_this2.state.dateIsLoaded, end);
+          _this2.setState({ dateIsLoaded: tracker });
+
           _this2.filterEvents(); // TODO triger after firstDay is loaded
-          console.log('loop-done, set all days to loaded'); // TODO
           console.log(_this2.state.events); // TODO temp
           return;
         }
       };
       // triger the loop
-      async.findEvents(_this2.state.api.getUrl(data), _this2.state.events).then(function (x) {
-        loop(x);
-        // this.setState({isReady: true}); // TODO temp only triger when firsDay done
+      async.findEvents(_this2.api.getUrl(data), _this2.state.events).then(function (x) {
+        return loop(x);
       });
     };
 
     _this2.componentDidMount = function () {
-      var end = time.getMonthLimit(_this2.state.loadMonths);
-      var calendarObj = time.createCalendarObj(end);
-      var tracker = time.createCalendarObj(end, true);
-      var lastDay = new Date(end);
-      lastDay = time.getTimeObj(lastDay, lastDay.getTimezoneOffset() * 60000);
+      var lastDay = time.getMonthLimit(_this2.params.loadMonths);
+      var calendarObj = time.createCalendarObj(lastDay);
+      var tracker = time.createCalendarObj(lastDay, true);
+
+      _this2.params.lastDay = lastDay;
+      _this2.params.monthKeys = calendarObj.months;
       _this2.setState({
         events: calendarObj.calendar,
-        dayIsLoaded: tracker.calendar,
-        months: calendarObj.months,
-        lastDay: lastDay,
-        filter: { day: [calendarObj.months[0], time.now.day], categories: [] }
+        dateIsLoaded: tracker.calendar,
+        filterParams: { day: [calendarObj.months[0], time.now.day], categories: [] }
       });
 
       async.geoLocate().then(function (x) {
-        var temp = clone(_this2.state.search);
+        var temp = task.clone(_this2.state.search);
         temp.loc = x;
         _this2.setState({ search: temp });
-        return _this2.findEventsLoop(x, _this2.state.lastDay);
+        return _this2.findEventsLoop(x, _this2.params.lastDay);
       });
     };
 
     _this2.state = {
-      // loadDone: false,
       search: {
-        radius: 10, // max 100.00 (miles)
+        radius: 12, // max 100.00 (miles)
         loc: [] // [38.366473, -96.262056]
       },
-      loadMonths: 0, // 0 loads this month only
-      api: {
-        key: '457b71183481b13752d69755d97632',
-        omit: 'description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url',
-        getUrl: function getUrl() {
-          var loc = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2.state.search.loc;
-          return 'https://api.meetup.com/find/events?' + '&sign=true&photo-host=public&' + ('lat=' + loc[0] + '&lon=' + loc[1]) + ('&radius=' + _this2.state.search.radius + '&fields=group_photo,group_category') + ('&omit=' + _this2.state.api.omit + '&key=' + _this2.state.api.key);
-        }
-      },
       events: {},
-      dayIsLoaded: {},
-      months: [],
-      today: time.now,
-      lastDay: {},
-      filter: { day: [], categories: [] },
-      onMapEvents: [],
+      dateIsLoaded: {},
+      filterParams: { day: [], categories: [] },
+      setEventsOnMap: [],
       meta: {}
     };
 
     return _this2;
-  }
+  } // TEMP
+
 
   _createClass(Controls, [{
     key: 'render',
     value: function render() {
-      // console.log('render -> this.state.onMapEvents', this.state.onMapEvents);
-      if (this.state.onMapEvents.length) {
-        this.setState({ onMapEvents: [] });
+      if (this.state.setEventsOnMap.length) {
+        this.setState({ setEventsOnMap: [] });
       }
       if (this.state.search.loc.length) {
         var rad = this.state.search.radius;
@@ -447,7 +490,7 @@ var Controls = function (_React$Component2) {
         'div',
         null,
         React.createElement(Map, {
-          events: this.state.onMapEvents,
+          events: this.state.setEventsOnMap,
           center: this.state.search.loc,
           radius: this.state.search.radius
         })

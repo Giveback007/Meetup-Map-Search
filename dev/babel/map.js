@@ -133,9 +133,8 @@ class Map extends React.Component
     }
     if (this.props.events.length)
     {
-      console.log('render -> map', this.props.events);
+      // console.log('render -> map', this.props.events); // temp
       this.putEventsOnMap(this.props.events);
-
     }
     return (null);
   }

@@ -77,7 +77,7 @@ async.findEvents = (url, allEvents) =>
 	{
 		const parseData = (dt) =>
 		{
-			let events = clone(allEvents);
+			let events = task.clone(allEvents);
 			// Forms the data
 			let data = dt.data.map(x =>
 			{
@@ -91,7 +91,7 @@ async.findEvents = (url, allEvents) =>
 				return obj;
 			});
 
-			// Merges the data into existing calendar form
+			// Merges the data into existing calendar
 			data.map(x => {
 				let key = x.time.key;
 				if (!events[key[0]]) {return}
