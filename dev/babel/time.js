@@ -13,6 +13,7 @@ time.daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 time.getKey = (y, m, d) =>
 {
 	return [`${y}-${m < 9 ? '0' + (m + 1): m + 1}`, `${d}`];
+	// return [`${y}-${time.months[m]}`, `${d}`]; <- Diff key format
 }
 
 time.getTimeObj = (unix, offset) =>
@@ -22,17 +23,18 @@ time.getTimeObj = (unix, offset) =>
 		let hour = ((t.hour + 11) % 12 + 1);
 		let amPm = t.hour < 12 ? 'am' : 'pm';
 		let min = t.min === 0 ? '00' : t.min;
-		let full =
-			`${time.daysOfWeek[t.weekDay]}, ${time.months[t.month]}`
-			+ ` ${t.day}, ${hour}:${min} ${amPm}`;
-		return full;
+		return(
+			`${time.daysOfWeek[t.weekDay]},` +
+			`${time.months[t.month]}` +
+			` ${t.day}, ${hour}:${min} ${amPm}`
+		);
 	}
 
 	let date = new Date(unix - offset);
 
 	let obj =
 	{
-		unix: unix,
+		unix: new Date(unix),
 		offset: offset,
 		year: date.getUTCFullYear(),
 		month: date.getUTCMonth(),
@@ -51,14 +53,32 @@ time.now = time.getTimeObj(
 	new Date(), new Date().getTimezoneOffset() * 60000
 );
 
+// time.getDayLimit = (daysFromNow) =>
+// {
+// 	const now = time.now;
+// 	const lastDay = new Date(now.year, now.month, now.day + daysFromNow);
+//
+// }
+
+time.getWeekLimit = (weeksFromNow) =>
+{
+	const now = time.now;
+	const day = now.day + (6 - now.weekDay) + (weeksFromNow * 7);
+	const lastDay = new Date(now.year, now.month, day);
+	const end = lastDay.setHours(23, 59, 59, 999);
+	const offset = new Date(end).getTimezoneOffset() * 60000;
+
+	return time.getTimeObj(end, offset);
+}
+
 time.getMonthLimit = (monthsFromNow) =>
 {
-	let lastDay = new Date(time.now.year, time.now.month + monthsFromNow + 1, 0);
-	let end = lastDay.setHours(23, 59, 59, 999);
-	let offset = new Date(end).getTimezoneOffset() * 60000;
-	let obj = time.getTimeObj(end, offset);
+	const now = time.now;
+	const lastDay = new Date(now.year, now.month + monthsFromNow + 1, 0);
+	const end = lastDay.setHours(23, 59, 59, 999);
+	const offset = new Date(end).getTimezoneOffset() * 60000;
 
-	return obj;
+	return time.getTimeObj(end, offset);
 }
 
 //

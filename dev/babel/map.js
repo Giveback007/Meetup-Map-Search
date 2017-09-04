@@ -5,7 +5,7 @@ class Map extends React.Component
   {
     super(props);
   }
-  mainMap;
+  mainMap; // <- main variable
   centerMarker = L.marker();
   centerRadius = L.circle();
   markerCluster = L.markerClusterGroup();
@@ -36,21 +36,19 @@ class Map extends React.Component
     let centerIcon = L.divIcon(
       {
       className: 'centerMarker',
-      iconSize: new L.Point(100, 100),
+      iconSize: new L.Point(50, 50),
       html: '<div><i class="fa fa-compass" aria-hidden="true"></i></div>'
       }
     );
     this.centerMarker = L.marker(
       loc,
-      {icon: centerIcon}
-    ).bindTooltip(
-      `Search Center`,
       {
-      offset: [0, 0],
-      direction: 'top'
+        icon: centerIcon,
+        // interactive: false,
+        title: 'Search Center'
       }
     );
-    //.bindPopup("<b>Search Center</b>"); ///////////
+
     this.mainMap.addLayer(this.centerMarker);
 
     this.centerRadius = L.circle(

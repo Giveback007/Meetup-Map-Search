@@ -28,7 +28,7 @@ async.limiter = (meta) =>
 {
 	let limit = Number(meta['X-RateLimit-Remaining']);
 	let reset = Number(meta['X-RateLimit-Reset']);
-	// console.log('limit left ' + limit, ', reset ' + reset) // temp
+	console.log('calls left ' + limit, ', reset in ' + reset + ' sec') // temp
 	return new Promise((resolve, reject) =>
 	{
 		if (limit <= 1)
@@ -49,6 +49,7 @@ async.geoLocate = () =>
 {
 	return new Promise((resolve, reject) =>
 	{
+		console.log('loc preset to [41.957819, -87.994403], fix it!');
 		resolve([41.957819, -87.994403]); // temp
 		const options =
 		{
@@ -71,6 +72,7 @@ async.geoLocate = () =>
 // -- geoLocate -- //
 
 // -- findEvents -- //
+async.overflowEvents = [];
 async.findEvents = (url, allEvents) =>
 {
 	return new Promise((resolve, reject) =>
@@ -86,17 +88,27 @@ async.findEvents = (url, allEvents) =>
 					[obj.venue.lat, obj.venue.lon] : null;
 				obj.time = time.getTimeObj(obj.time, obj.utc_offset * -1);
 				obj.duration = obj.duration / 60000 || null;
+				obj.category = obj.group.category.name;
+				delete obj.group.category;
 				delete obj.utc_offset;
 				delete obj.venue;
 				return obj;
 			});
 
-			// Merges the data into existing calendar
-			data.map(x => {
+			// Merge data with overflow
+			let overflow = task.clone(async.overflowEvents);
+			async.overflowEvents = [];
+			let newData = data.concat(overflow);
+
+			// Merge the data into existing calendar
+			newData.map(x => {
 				let key = x.time.key;
-				if (!events[key[0]]) {return}
-				events[key[0]][key[1]]
-					.push(x);
+				if (!events[key[0]] || !events[key[0]][key[1]])
+				{
+					async.overflowEvents.push(x);
+					return;
+				}
+				events[key[0]][key[1]].push(x);
 			});
 
 			let obj = {};
@@ -111,3 +123,21 @@ async.findEvents = (url, allEvents) =>
 	});
 }
 // -- findEvents -- //
+
+// -- getCategories -- //
+async.getCategories = (url) =>
+{
+	return new Promise((resolve) => {
+		function parseData(data)
+		{
+			let arr = [];
+			data.results.map(x =>
+			{
+				arr.push(x.name);
+			});
+			return arr;
+		}
+		async.ajaxCall(url).then( x => resolve(parseData(x)) );
+	});
+}
+// -- getCategories -- //

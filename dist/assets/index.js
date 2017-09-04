@@ -61,6 +61,7 @@ time.daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 time.getKey = function (y, m, d) {
   return [y + '-' + (m < 9 ? '0' + (m + 1) : m + 1), '' + d];
+  // return [`${y}-${time.months[m]}`, `${d}`]; <- Diff key format
 };
 
 time.getTimeObj = function (unix, offset) {
@@ -68,14 +69,13 @@ time.getTimeObj = function (unix, offset) {
     var hour = (t.hour + 11) % 12 + 1;
     var amPm = t.hour < 12 ? 'am' : 'pm';
     var min = t.min === 0 ? '00' : t.min;
-    var full = time.daysOfWeek[t.weekDay] + ', ' + time.months[t.month] + (' ' + t.day + ', ' + hour + ':' + min + ' ' + amPm);
-    return full;
+    return time.daysOfWeek[t.weekDay] + ',' + ('' + time.months[t.month]) + (' ' + t.day + ', ' + hour + ':' + min + ' ' + amPm);
   };
 
   var date = new Date(unix - offset);
 
   var obj = {
-    unix: unix,
+    unix: new Date(unix),
     offset: offset,
     year: date.getUTCFullYear(),
     month: date.getUTCMonth(),
@@ -92,13 +92,30 @@ time.getTimeObj = function (unix, offset) {
 
 time.now = time.getTimeObj(new Date(), new Date().getTimezoneOffset() * 60000);
 
-time.getMonthLimit = function (monthsFromNow) {
-  var lastDay = new Date(time.now.year, time.now.month + monthsFromNow + 1, 0);
+// time.getDayLimit = (daysFromNow) =>
+// {
+// 	const now = time.now;
+// 	const lastDay = new Date(now.year, now.month, now.day + daysFromNow);
+//
+// }
+
+time.getWeekLimit = function (weeksFromNow) {
+  var now = time.now;
+  var day = now.day + (6 - now.weekDay) + weeksFromNow * 7;
+  var lastDay = new Date(now.year, now.month, day);
   var end = lastDay.setHours(23, 59, 59, 999);
   var offset = new Date(end).getTimezoneOffset() * 60000;
-  var obj = time.getTimeObj(end, offset);
 
-  return obj;
+  return time.getTimeObj(end, offset);
+};
+
+time.getMonthLimit = function (monthsFromNow) {
+  var now = time.now;
+  var lastDay = new Date(now.year, now.month + monthsFromNow + 1, 0);
+  var end = lastDay.setHours(23, 59, 59, 999);
+  var offset = new Date(end).getTimezoneOffset() * 60000;
+
+  return time.getTimeObj(end, offset);
 };
 
 //
@@ -154,8 +171,8 @@ async.ajaxCall = function (url) {
 async.limiter = function (meta) {
   var limit = Number(meta['X-RateLimit-Remaining']);
   var reset = Number(meta['X-RateLimit-Reset']);
-  // console.log('limit left ' + limit, ', reset ' + reset) // temp
-  return new Promise(function (resolve, reject) {
+  console.log('calls left ' + limit, ', reset in ' + reset + ' sec' // temp
+  );return new Promise(function (resolve, reject) {
     if (limit <= 1) {
       console.log('limit reached, ' + reset + ' seconds until reset'); // temp
       setTimeout(resolve, reset * 1000 + 500);
@@ -169,6 +186,7 @@ async.limiter = function (meta) {
 // -- geoLocate -- //
 async.geoLocate = function () {
   return new Promise(function (resolve, reject) {
+    console.log('loc preset to [41.957819, -87.994403], fix it!');
     resolve([41.957819, -87.994403]); // temp
     var options = {
       enableHighAccuracy: true,
@@ -188,6 +206,7 @@ async.geoLocate = function () {
 // -- geoLocate -- //
 
 // -- findEvents -- //
+async.overflowEvents = [];
 async.findEvents = function (url, allEvents) {
   return new Promise(function (resolve, reject) {
     var parseData = function parseData(dt) {
@@ -198,15 +217,23 @@ async.findEvents = function (url, allEvents) {
         obj.loc = obj.venue ? [obj.venue.lat, obj.venue.lon] : null;
         obj.time = time.getTimeObj(obj.time, obj.utc_offset * -1);
         obj.duration = obj.duration / 60000 || null;
+        obj.category = obj.group.category.name;
+        delete obj.group.category;
         delete obj.utc_offset;
         delete obj.venue;
         return obj;
       });
 
-      // Merges the data into existing calendar
-      data.map(function (x) {
+      // Merge data with overflow
+      var overflow = task.clone(async.overflowEvents);
+      async.overflowEvents = [];
+      var newData = data.concat(overflow);
+
+      // Merge the data into existing calendar
+      newData.map(function (x) {
         var key = x.time.key;
-        if (!events[key[0]]) {
+        if (!events[key[0]] || !events[key[0]][key[1]]) {
+          async.overflowEvents.push(x);
           return;
         }
         events[key[0]][key[1]].push(x);
@@ -226,6 +253,23 @@ async.findEvents = function (url, allEvents) {
   });
 };
 // -- findEvents -- //
+
+// -- getCategories -- //
+async.getCategories = function (url) {
+  return new Promise(function (resolve) {
+    function parseData(data) {
+      var arr = [];
+      data.results.map(function (x) {
+        arr.push(x.name);
+      });
+      return arr;
+    }
+    async.ajaxCall(url).then(function (x) {
+      return resolve(parseData(x));
+    });
+  });
+};
+// -- getCategories -- //
 
 // This React class encapsulates the leaflet map
 
@@ -257,14 +301,15 @@ var Map = function (_React$Component) {
 
       var centerIcon = L.divIcon({
         className: 'centerMarker',
-        iconSize: new L.Point(100, 100),
+        iconSize: new L.Point(50, 50),
         html: '<div><i class="fa fa-compass" aria-hidden="true"></i></div>'
       });
-      _this.centerMarker = L.marker(loc, { icon: centerIcon }).bindTooltip('Search Center', {
-        offset: [0, 0],
-        direction: 'top'
+      _this.centerMarker = L.marker(loc, {
+        icon: centerIcon,
+        // interactive: false,
+        title: 'Search Center'
       });
-      //.bindPopup("<b>Search Center</b>"); ///////////
+
       _this.mainMap.addLayer(_this.centerMarker);
 
       _this.centerRadius = L.circle(loc, {
@@ -304,7 +349,8 @@ var Map = function (_React$Component) {
     };
 
     return _this;
-  }
+  } // <- main variable
+
   // -- initMap -- //
 
   // -- initMap -- //
@@ -361,62 +407,77 @@ var Controls = function (_React$Component2) {
 
     _this2.params = {
       lastDay: {},
-      loadMonths: 2, // 0 loads this month only
-      monthKeys: [] // are created in order -- use as refrence
+      loadWeeks: 0, // 0 loads this month only
+      monthKeys: [], // are created in order -- use as refrence
+      categList: {},
+      meta: {}
     };
     _this2.api = {
       key: '457b71183481b13752d69755d97632',
       omit: 'description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url',
-      getUrl: function getUrl() {
+      getEventUrl: function getEventUrl() {
         var loc = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2.state.search.loc;
         return 'https://api.meetup.com/find/events?' + '&sign=true&photo-host=public&' + ('lat=' + loc[0] + '&lon=' + loc[1]) + ('&radius=' + _this2.state.search.radius + '&fields=group_photo,group_category') + ('&omit=' + _this2.api.omit + '&key=' + _this2.api.key);
+      },
+      getCategoriesUrl: function getCategoriesUrl() {
+        return 'https://api.meetup.com/2/categories?' + ('&sign=true&photo-host=public&key=' + _this2.api.key);
       }
+
+      // -- filterEvents -- //
     };
-    _this2.counter = 2;
 
     _this2.filterEvents = function () {
-      var opt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2.state.filterParams;
-
-      var events = _this2.state.events[opt.day[0]][opt.day[1]];
+      var day = _this2.state.selected_day;
+      var categories = _this2.state.selected_categ;
+      var events = _this2.state.events[day[0]][day[1]];
       var filtered = void 0;
-      if (!opt.categories.length) {
+      if (!categories.length) {
         filtered = events;
-      } else {}
-      // TODO filter events by id#
+      } else {
+        filtered = events.filter(function (x) {
+          return categories.indexOf(x.category) !== -1;
+        });
+      }
 
-
-      // console.log(["2017-Sep", this.counter]); // <- TEMP
       _this2.setState({ setEventsOnMap: filtered });
-
-      _this2.counter++; // <- TEMP // TEMP \/
-      setTimeout(function () {
-        _this2.filterEvents({ day: ["2017-09", _this2.counter], categories: [] });
-      }, 5000); // TEMP
     };
 
-    _this2.newSearch = function () {
-      // TODO
-    };
+    _this2.newSearch = function () {}
+    // TODO
+
+    // -- newSearch -- //
+
+    // -- setEventState -- //
+    ;
 
     _this2.setEventState = function (data) {
+      var tracker = task.updateDateTracker(_this2.state.loadedDates, data.lastEventTime);
 
-      var tracker = task.updateDateTracker(_this2.state.dateIsLoaded, data.lastEventTime);
-
-      _this2.setState({
-        events: data.events,
-        meta: data.meta,
-        dateIsLoaded: tracker
-      });
+      _this2.params.meta = data.meta;
+      _this2.setState({ events: data.events, loadedDates: tracker });
     };
 
-    _this2.findEventsLoop = function (data, limit) {
-      var count = 0; // temp
+    _this2.todayIsLoaded = false;
+
+    _this2.loadToday = function () {
+      var forceLoad = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+      var key = _this2.state.selected_day;
+      if (!_this2.todayIsLoaded || forceLoad) if (_this2.state.loadedDates[key[0]][key[1]] || forceLoad) {
+        _this2.todayIsLoaded = true;
+        _this2.filterEvents();
+      }
+    };
+
+    _this2.findEventsLoop = function (loc, limit) {
+      // let count = 0; // temp
       var loop = function loop(obj) {
-        count++; // temp
+        // count++; // temp
+        _this2.loadToday();
         _this2.setEventState(obj);
         if (obj.meta.next_link && obj.lastEventTime.unix < limit.unix) {
           async.limiter(obj.meta).then(function () {
-            console.log('loop-' + count);
+            // console.log('loop-'+count); // temp
             return async.findEvents(obj.meta.next_link + ('&key=' + _this2.api.key), _this2.state.events);
           }).then(function (x) {
             return loop(x);
@@ -425,22 +486,21 @@ var Controls = function (_React$Component2) {
           // set all days to loaded
           var end = task.clone(_this2.params.lastDay);
           end.day++;
-          var tracker = task.updateDateTracker(_this2.state.dateIsLoaded, end);
-          _this2.setState({ dateIsLoaded: tracker });
+          var tracker = task.updateDateTracker(_this2.state.loadedDates, end);
+          _this2.setState({ loadedDates: tracker });
 
-          _this2.filterEvents(); // TODO triger after firstDay is loaded
-          console.log(_this2.state.events); // TODO temp
-          return;
+          _this2.loadToday(true);
+          console.log(_this2.state.events); // temp
         }
       };
       // triger the loop
-      async.findEvents(_this2.api.getUrl(data), _this2.state.events).then(function (x) {
+      async.findEvents(_this2.api.getEventUrl(loc), _this2.state.events).then(function (x) {
         return loop(x);
       });
     };
 
     _this2.componentDidMount = function () {
-      var lastDay = time.getMonthLimit(_this2.params.loadMonths);
+      var lastDay = time.getWeekLimit(_this2.params.loadWeeks);
       var calendarObj = time.createCalendarObj(lastDay);
       var tracker = time.createCalendarObj(lastDay, true);
 
@@ -448,36 +508,55 @@ var Controls = function (_React$Component2) {
       _this2.params.monthKeys = calendarObj.months;
       _this2.setState({
         events: calendarObj.calendar,
-        dateIsLoaded: tracker.calendar,
-        filterParams: { day: [calendarObj.months[0], time.now.day], categories: [] }
+        loadedDates: tracker.calendar
+        // TODO reinstate \/
+        // filterParams: {day: [calendarObj.months[0], time.now.day], categories: []},
       });
-
-      async.geoLocate().then(function (x) {
-        var temp = task.clone(_this2.state.search);
-        temp.loc = x;
-        _this2.setState({ search: temp });
+      async.getCategories(_this2.api.getCategoriesUrl()).then(function (x) {
+        _this2.params.categList = x;
+        return async.geoLocate();
+      }).then(function (x) {
+        _this2.setState({ search: { loc: x, radius: _this2.state.search.radius } });
         return _this2.findEventsLoop(x, _this2.params.lastDay);
       });
     };
 
     _this2.state = {
       search: {
-        radius: 12, // max 100.00 (miles)
+        radius: 35, // max 100.00 (miles)
         loc: [] // [38.366473, -96.262056]
       },
       events: {},
-      dateIsLoaded: {},
-      filterParams: { day: [], categories: [] },
-      setEventsOnMap: [],
-      meta: {}
+      loadedDates: {},
+      selected_day: time.now.key, //time.getKey(2017, 8, 7),
+      selected_categ: [], //["Tech", "Games"],
+      setEventsOnMap: []
     };
-
     return _this2;
-  } // TEMP
+  }
+  // -- filterEvents -- //
+
+  // -- newSearch -- //
+
+  // -- setEventState -- //
+
+  // -- loadToday -- //
+
+  // -- loadToday -- //
+
+  // -- findEventsLoop -- //
+
+  // -- findEventsLoop -- //
+
+  // -- componentDidMount -- //
 
 
   _createClass(Controls, [{
     key: 'render',
+
+    // -- componentDidMount -- //
+
+    // -- render -- //
     value: function render() {
       if (this.state.setEventsOnMap.length) {
         this.setState({ setEventsOnMap: [] });
@@ -496,6 +575,8 @@ var Controls = function (_React$Component2) {
         })
       );
     }
+    // -- render -- //
+
   }]);
 
   return Controls;
