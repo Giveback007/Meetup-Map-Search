@@ -287,10 +287,19 @@ var Map = function (_React$Component) {
 
     _this.initMap = function () {
       _this.mainMap = L.map('map').setView([38.366473, -96.262056], 5);
-      var openstreetmaps = new L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="http://openstreetmap.org/">' + 'OpenStreetMap</a> contributors'
+      // let tiles = new L.tileLayer(
+      //   'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      //   {
+      //     attribution: '&copy; <a href="http://openstreetmap.org/">'
+      //     +'OpenStreetMap</a> contributors'
+      //   }
+      // );
+      var tiles = new L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/{id}/tiles/256/{z}/{x}/{y}?access_token={accessToken}', {
+        id: 'outdoors-v10',
+        accessToken: apiKey.mapbox || console.log('MAPBOX API KEY ERROR'),
+        attribution: '&copy; <a href="http://mapbox.com/">' + 'Mapbox</a> &copy; <a href="http://openstreetmap.org/">' + 'OpenStreetMap</a>'
       });
-      _this.mainMap.addLayer(openstreetmaps);
+      _this.mainMap.addLayer(tiles);
     };
 
     _this.newCenter = function (loc, rds) {
@@ -413,11 +422,11 @@ var Controls = function (_React$Component2) {
       meta: {}
     };
     _this2.api = {
-      key: '457b71183481b13752d69755d97632',
+      key: apiKey.meetup || console.log('MEETUP API KEY ERROR'),
       omit: 'description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url',
       getEventUrl: function getEventUrl() {
         var loc = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2.state.search.loc;
-        return 'https://api.meetup.com/find/events?' + '&sign=true&photo-host=public&' + ('lat=' + loc[0] + '&lon=' + loc[1]) + ('&radius=' + _this2.state.search.radius + '&fields=group_photo,group_category') + ('&omit=' + _this2.api.omit + '&key=' + _this2.api.key);
+        return 'https://api.meetup.com/find/events?' + '&sign=true&photo-host=public&' + ('lat=' + loc[0] + '&lon=' + loc[1]) + ('&radius=' + _this2.state.search.radius + '&fields=group_photo,group_category') + ('&omit=' + _this2.api.omit) + ('&key=' + _this2.api.key);
       },
       getCategoriesUrl: function getCategoriesUrl() {
         return 'https://api.meetup.com/2/categories?' + ('&sign=true&photo-host=public&key=' + _this2.api.key);

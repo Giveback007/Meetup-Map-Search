@@ -29,14 +29,15 @@ class Controls extends React.Component
 
   api =
   {
-    key: '457b71183481b13752d69755d97632',
+    key: apiKey.meetup || console.log('MEETUP API KEY ERROR'),
     omit: `description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url`,
     getEventUrl: (loc = this.state.search.loc) =>
       `https://api.meetup.com/find/events?` +
       `&sign=true&photo-host=public&` +
       `lat=${loc[0]}&lon=${loc[1]}` +
       `&radius=${this.state.search.radius}&fields=group_photo,group_category` +
-      `&omit=${this.api.omit}&key=${this.api.key}`,
+      `&omit=${this.api.omit}`+
+      `&key=${this.api.key}`,
     getCategoriesUrl: () =>
       `https://api.meetup.com/2/categories?` +
       `&sign=true&photo-host=public&key=${this.api.key}`
