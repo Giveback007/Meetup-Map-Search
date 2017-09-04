@@ -31,7 +31,7 @@ async.limiter = (meta) =>
 	console.log('calls left ' + limit, ', reset in ' + reset + ' sec') // temp
 	return new Promise((resolve, reject) =>
 	{
-		if (limit <= 1)
+		if (limit <= 10)
 		{
 			console.log('limit reached, ' + reset + ' seconds until reset'); // temp
 			setTimeout(resolve, (reset * 1000) + 500);
@@ -141,3 +141,27 @@ async.getCategories = (url) =>
 	});
 }
 // -- getCategories -- //
+
+// -- reverseGeo -- //
+async.reverseGeo = (loc) =>
+{
+	return new Promise(resolve => {
+		async.ajaxCall(`https://geocode.xyz/${loc[0]},${loc[1]}?geoit=json`)
+			.then(x =>
+			{
+				let state = task.capitalizeWords(x.prov);
+				let city = task.capitalizeWords(x.city);
+				resolve(`${city}, ${state}`);
+			});
+	});
+}
+// -- reverseGeo -- //
+
+// -- geocode -- //
+async.geocode = (locStr) =>
+{
+	return new Promise(resolve => {
+		async.ajaxCall(`https://geocode.xyz/${locStr}%20usa?geoit=json`)
+			.then( x => resolve([x.latt. x.longt]) )
+	});
+}

@@ -11,17 +11,23 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 //@prepros-append babel/helper.js
 //@prepros-append babel/time.js
 //@prepros-append babel/async.js
-//@prepros-append babel/map.js
+
 //@prepros-append babel/controls.js
+//@prepros-append babel/map.js
+//@prepros-append babel/adressSearchBar.js
+
 //@prepros-append babel/start.js
 
 var task = {};
 
+// -- clone -- //
 task.clone = function (obj) {
   var clone = JSON.stringify(obj);
   return JSON.parse(clone);
 };
+// -- clone -- //
 
+// -- updateDateTracker -- //
 task.updateDateTracker = function (tracker, limit) {
   var loaded = task.clone(tracker);
 
@@ -49,9 +55,18 @@ task.updateDateTracker = function (tracker, limit) {
 
   return loaded;
 };
+// -- updateDateTracker -- //
 
-// async.ajaxCall('https://api.meetup.com/2/categories?&sign=true&photo-host=public&key=457b71183481b13752d69755d97632')
-// 	.then(x => console.log(x.results))
+// -- capitalizeWords -- //
+task.capitalizeWords = function (x) {
+  var str = x.toLowerCase();
+  var arr = str.split(' ');
+  arr = arr.map(function (x) {
+    return x.charAt(0).toUpperCase() + x.slice(1);
+  });
+  return arr.join(' ');
+};
+// -- capitalizeWords -- //
 
 var time = {};
 
@@ -60,16 +75,16 @@ time.months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'O
 time.daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 time.getKey = function (y, m, d) {
-  return [y + '-' + (m < 9 ? '0' + (m + 1) : m + 1), '' + d];
-  // return [`${y}-${time.months[m]}`, `${d}`]; <- Diff key format
+  // return [`${y}-${m < 9 ? '0' + (m + 1): m + 1}`, `${d}`]; <- Diff key format
+  return [y + '-' + time.months[m], '' + d];
 };
 
 time.getTimeObj = function (unix, offset) {
   var getTimeString = function getTimeString(t) {
     var hour = (t.hour + 11) % 12 + 1;
     var amPm = t.hour < 12 ? 'am' : 'pm';
-    var min = t.min === 0 ? '00' : t.min;
-    return time.daysOfWeek[t.weekDay] + ',' + ('' + time.months[t.month]) + (' ' + t.day + ', ' + hour + ':' + min + ' ' + amPm);
+    var min = t.min < 10 ? '0' + t.min : t.min;
+    return time.daysOfWeek[t.weekDay] + ',' + (' ' + time.months[t.month]) + (' ' + t.day + ', ' + hour + ':' + min + ' ' + amPm);
   };
 
   var date = new Date(unix - offset);
@@ -92,12 +107,14 @@ time.getTimeObj = function (unix, offset) {
 
 time.now = time.getTimeObj(new Date(), new Date().getTimezoneOffset() * 60000);
 
-// time.getDayLimit = (daysFromNow) =>
-// {
-// 	const now = time.now;
-// 	const lastDay = new Date(now.year, now.month, now.day + daysFromNow);
-//
-// }
+time.getDayLimit = function (daysFromNow) {
+  var now = time.now;
+  var lastDay = new Date(now.year, now.month, now.day + daysFromNow);
+  var end = lastDay.setHours(23, 59, 59, 999);
+  var offset = new Date(end).getTimezoneOffset() * 60000;
+
+  return time.getTimeObj(end, offset);
+};
 
 time.getWeekLimit = function (weeksFromNow) {
   var now = time.now;
@@ -171,9 +188,9 @@ async.ajaxCall = function (url) {
 async.limiter = function (meta) {
   var limit = Number(meta['X-RateLimit-Remaining']);
   var reset = Number(meta['X-RateLimit-Reset']);
-  console.log('calls left ' + limit, ', reset in ' + reset + ' sec' // temp
-  );return new Promise(function (resolve, reject) {
-    if (limit <= 1) {
+  console.log('calls left ' + limit, ', reset in ' + reset + ' sec'); // temp
+  return new Promise(function (resolve, reject) {
+    if (limit <= 10) {
       console.log('limit reached, ' + reset + ' seconds until reset'); // temp
       setTimeout(resolve, reset * 1000 + 500);
     } else {
@@ -271,22 +288,263 @@ async.getCategories = function (url) {
 };
 // -- getCategories -- //
 
+// -- reverseGeo -- //
+async.reverseGeo = function (loc) {
+  return new Promise(function (resolve) {
+    async.ajaxCall('https://geocode.xyz/' + loc[0] + ',' + loc[1] + '?geoit=json').then(function (x) {
+      var state = task.capitalizeWords(x.prov);
+      var city = task.capitalizeWords(x.city);
+      resolve(city + ', ' + state);
+    });
+  });
+};
+// -- reverseGeo -- //
+
+// -- geocode -- //
+async.geocode = function (locStr) {
+  return new Promise(function (resolve) {
+    async.ajaxCall('https://geocode.xyz/' + locStr + '%20usa?geoit=json').then(function (x) {
+      return resolve([x.latt.x.longt]);
+    });
+  });
+};
+
+var Controls = function (_React$Component) {
+  _inherits(Controls, _React$Component);
+
+  function Controls(props) {
+    _classCallCheck(this, Controls);
+
+    var _this = _possibleConstructorReturn(this, (Controls.__proto__ || Object.getPrototypeOf(Controls)).call(this, props));
+
+    _this.params = {
+      lastDay: {},
+      monthKeys: [], // are created in order -- use as refrence
+      categList: {},
+      meta: {},
+      timeLimit: time.getDayLimit(1)
+    };
+    _this.api = {
+      key: apiKey.meetup || console.log('MEETUP API KEY ERROR'),
+      omit: 'description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url',
+      getEventUrl: function getEventUrl() {
+        var loc = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this.state.latLon;
+        return 'https://api.meetup.com/find/events?' + '&sign=true&photo-host=public&' + ('lat=' + loc[0] + '&lon=' + loc[1]) + ('&radius=' + _this.state.radius + '&fields=group_photo,group_category') + ('&omit=' + _this.api.omit) + ('&key=' + _this.api.key);
+      },
+      getCategoriesUrl: function getCategoriesUrl() {
+        return 'https://api.meetup.com/2/categories?' + ('&sign=true&photo-host=public&key=' + _this.api.key);
+      }
+
+      // -- setEventState -- //
+    };
+
+    _this.setEventState = function (data) {
+      var tracker = task.updateDateTracker(_this.state.loadedDates, data.lastEventTime);
+
+      _this.params.meta = data.meta;
+      _this.setState({ events: data.events, loadedDates: tracker });
+    };
+
+    _this.setLocName = function (loc) {
+      async.reverseGeo(loc).then(function (x) {
+        return _this.setState({ locName: x });
+      });
+    };
+
+    _this.setLatLon = function (locStr) {
+      async.geocode(locStr).then(function (x) {
+        setLocName(x);
+        _this.setState({ latLon: x });
+      });
+    };
+
+    _this.filterEvents = function () {
+      var day = _this.state.selected_day.key;
+      var categories = _this.state.selected_categ;
+      var events = _this.state.events[day[0]][day[1]];
+      var filtered = void 0;
+      if (!categories.length) {
+        filtered = events;
+      } else {
+        filtered = events.filter(function (x) {
+          return categories.indexOf(x.category) !== -1;
+        });
+      }
+
+      _this.setState({ setEventsOnMap: filtered, eventsFound: filtered.length });
+    };
+
+    _this.newSearch = function () {}
+    // TODO
+
+    // -- newSearch -- //
+
+    // -- loadToday -- //
+    ;
+
+    _this.todayIsLoaded = false;
+
+    _this.loadToday = function () {
+      var forceLoad = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+      var key = _this.state.selected_day.key;
+      if (!_this.todayIsLoaded || forceLoad) if (_this.state.loadedDates[key[0]][key[1]] || forceLoad) {
+        _this.todayIsLoaded = true;
+        _this.filterEvents();
+      }
+    };
+
+    _this.findEventsLoop = function (loc, limit) {
+      // let count = 0; // temp
+      var loop = function loop(obj) {
+        // count++; // temp
+        _this.loadToday();
+        _this.setEventState(obj);
+        if (obj.meta.next_link && obj.lastEventTime.unix < limit.unix) {
+          async.limiter(obj.meta).then(function () {
+            // console.log('loop-'+count); // temp
+            return async.findEvents(obj.meta.next_link + ('&key=' + _this.api.key), _this.state.events);
+          }).then(function (x) {
+            return loop(x);
+          });
+        } else {
+          // set all days to loaded
+          var end = task.clone(_this.params.lastDay);
+          end.day++;
+          var tracker = task.updateDateTracker(_this.state.loadedDates, end);
+          _this.setState({ loadedDates: tracker });
+
+          _this.loadToday(true);
+          console.log(_this.state.events); // temp
+        }
+      };
+      // triger the loop
+      async.findEvents(_this.api.getEventUrl(loc), _this.state.events).then(function (x) {
+        return loop(x);
+      });
+    };
+
+    _this.componentDidMount = function () {
+      var lastDay = _this.params.timeLimit;
+      var calendarObj = time.createCalendarObj(lastDay);
+      var tracker = time.createCalendarObj(lastDay, true);
+
+      _this.params.lastDay = lastDay;
+      _this.params.monthKeys = calendarObj.months;
+      _this.setState({
+        events: calendarObj.calendar,
+        loadedDates: tracker.calendar
+        // TODO reinstate \/
+        // filterParams: {day: [calendarObj.months[0], time.now.day], categories: []},
+      });
+      async.getCategories(_this.api.getCategoriesUrl()).then(function (x) {
+        _this.params.categList = x;
+        return async.geoLocate();
+      }).then(function (x) {
+        _this.setState({
+          latLon: x,
+          radius: _this.state.radius
+        });
+        _this.setLocName(x);
+        _this.findEventsLoop(x, _this.params.lastDay);
+      });
+    };
+
+    _this.state = {
+      radius: 35, // max 100.00 (miles)
+      latLon: [], // [38.366473, -96.262056]
+      locName: '...',
+      events: {},
+      loadedDates: {},
+      selected_day: time.getTimeObj(new Date(2017, 8, 5), new Date(2017, 8, 8).getTimezoneOffset() * 60000), //time.now,//
+      selected_categ: [], //["Tech", "Games"],
+      eventsFound: 0,
+      setEventsOnMap: []
+    };
+    return _this;
+  }
+  // -- setEventState -- //
+
+  // -- setLocName -- //
+
+  // -- setLocName -- //
+
+  // -- setLocName -- //
+
+  // -- setLocName -- //
+
+  // -- filterEvents -- //
+
+  // -- filterEvents -- //
+
+  // -- newSearch -- //
+
+  // -- loadToday -- //
+
+  // -- findEventsLoop -- //
+
+  // -- findEventsLoop -- //
+
+  // -- componentDidMount -- //
+
+
+  _createClass(Controls, [{
+    key: 'render',
+
+    // -- componentDidMount -- //
+
+    // -- render -- //
+    value: function render() {
+      if (this.state.setEventsOnMap.length) {
+        this.setState({ setEventsOnMap: [] });
+      }
+      if (this.state.latLon.length) {
+        this.setState({ latLon: [] });
+      }
+      return React.createElement(
+        'div',
+        null,
+        React.createElement(Map, {
+          events: this.state.setEventsOnMap,
+          center: this.state.latLon,
+          radius: this.state.radius
+        }),
+        React.createElement(AdressSearchBar, {
+          date: this.state.selected_day,
+          eventsFound: this.state.eventsFound,
+          radius: this.state.radius,
+          loc: this.state.locName
+        })
+      );
+    }
+    // -- render -- //
+
+  }]);
+
+  return Controls;
+}(React.Component);
+
 // This React class encapsulates the leaflet map
 
-var Map = function (_React$Component) {
-  _inherits(Map, _React$Component);
+
+var Map = function (_React$Component2) {
+  _inherits(Map, _React$Component2);
 
   function Map(props) {
     _classCallCheck(this, Map);
 
-    var _this = _possibleConstructorReturn(this, (Map.__proto__ || Object.getPrototypeOf(Map)).call(this, props));
+    var _this2 = _possibleConstructorReturn(this, (Map.__proto__ || Object.getPrototypeOf(Map)).call(this, props));
 
-    _this.centerMarker = L.marker();
-    _this.centerRadius = L.circle();
-    _this.markerCluster = L.markerClusterGroup();
+    _this2.centerMarker = L.marker();
+    _this2.centerRadius = L.circle();
+    _this2.markerCluster = L.markerClusterGroup();
 
-    _this.initMap = function () {
-      _this.mainMap = L.map('map').setView([38.366473, -96.262056], 5);
+    _this2.initMap = function () {
+      _this2.mainMap = L.map('map', { zoomControl: false }).setView([38.366473, -96.262056], 5);
+
+      var zoomBtns = L.control.zoom({
+        position: 'topright'
+      }).addTo(_this2.mainMap);
       // let tiles = new L.tileLayer(
       //   'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       //   {
@@ -299,40 +557,40 @@ var Map = function (_React$Component) {
         accessToken: apiKey.mapbox || console.log('MAPBOX API KEY ERROR'),
         attribution: '&copy; <a href="http://mapbox.com/">' + 'Mapbox</a> &copy; <a href="http://openstreetmap.org/">' + 'OpenStreetMap</a>'
       });
-      _this.mainMap.addLayer(tiles);
+      _this2.mainMap.addLayer(tiles);
     };
 
-    _this.newCenter = function (loc, rds) {
-      _this.mainMap.removeLayer(_this.centerMarker);
-      _this.mainMap.removeLayer(_this.centerRadius);
+    _this2.newCenter = function (loc, rds) {
+      _this2.mainMap.removeLayer(_this2.centerMarker);
+      _this2.mainMap.removeLayer(_this2.centerRadius);
 
-      _this.mainMap.flyTo(loc, 10, { duration: 3 });
+      _this2.mainMap.flyTo(loc, 10, { duration: 3 });
 
       var centerIcon = L.divIcon({
         className: 'centerMarker',
         iconSize: new L.Point(50, 50),
         html: '<div><i class="fa fa-compass" aria-hidden="true"></i></div>'
       });
-      _this.centerMarker = L.marker(loc, {
+      _this2.centerMarker = L.marker(loc, {
         icon: centerIcon,
         // interactive: false,
         title: 'Search Center'
       });
 
-      _this.mainMap.addLayer(_this.centerMarker);
+      _this2.mainMap.addLayer(_this2.centerMarker);
 
-      _this.centerRadius = L.circle(loc, {
+      _this2.centerRadius = L.circle(loc, {
         radius: 1609.344 * rds,
         interactive: false,
         fillOpacity: 0.07,
         opacity: 0.4
       });
-      _this.mainMap.addLayer(_this.centerRadius);
+      _this2.mainMap.addLayer(_this2.centerRadius);
     };
 
-    _this.putEventsOnMap = function (events) {
-      _this.markerCluster.eachLayer(function (x) {
-        return _this.markerCluster.removeLayer(x);
+    _this2.putEventsOnMap = function (events) {
+      _this2.markerCluster.eachLayer(function (x) {
+        return _this2.markerCluster.removeLayer(x);
       });
       events.map(function (x) {
         var loc = x.loc ? x.loc : [x.group.lat, x.group.lon];
@@ -352,12 +610,12 @@ var Map = function (_React$Component) {
           direction: 'top'
         });
 
-        _this.markerCluster.addLayer(marker);
+        _this2.markerCluster.addLayer(marker);
       });
-      _this.mainMap.addLayer(_this.markerCluster);
+      _this2.mainMap.addLayer(_this2.markerCluster);
     };
 
-    return _this;
+    return _this2;
   } // <- main variable
 
   // -- initMap -- //
@@ -406,194 +664,37 @@ var Map = function (_React$Component) {
   return Map;
 }(React.Component);
 
-var Controls = function (_React$Component2) {
-  _inherits(Controls, _React$Component2);
-
-  function Controls(props) {
-    _classCallCheck(this, Controls);
-
-    var _this2 = _possibleConstructorReturn(this, (Controls.__proto__ || Object.getPrototypeOf(Controls)).call(this, props));
-
-    _this2.params = {
-      lastDay: {},
-      loadWeeks: 0, // 0 loads this month only
-      monthKeys: [], // are created in order -- use as refrence
-      categList: {},
-      meta: {}
-    };
-    _this2.api = {
-      key: apiKey.meetup || console.log('MEETUP API KEY ERROR'),
-      omit: 'description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url',
-      getEventUrl: function getEventUrl() {
-        var loc = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2.state.search.loc;
-        return 'https://api.meetup.com/find/events?' + '&sign=true&photo-host=public&' + ('lat=' + loc[0] + '&lon=' + loc[1]) + ('&radius=' + _this2.state.search.radius + '&fields=group_photo,group_category') + ('&omit=' + _this2.api.omit) + ('&key=' + _this2.api.key);
-      },
-      getCategoriesUrl: function getCategoriesUrl() {
-        return 'https://api.meetup.com/2/categories?' + ('&sign=true&photo-host=public&key=' + _this2.api.key);
-      }
-
-      // -- filterEvents -- //
-    };
-
-    _this2.filterEvents = function () {
-      var day = _this2.state.selected_day;
-      var categories = _this2.state.selected_categ;
-      var events = _this2.state.events[day[0]][day[1]];
-      var filtered = void 0;
-      if (!categories.length) {
-        filtered = events;
-      } else {
-        filtered = events.filter(function (x) {
-          return categories.indexOf(x.category) !== -1;
-        });
-      }
-
-      _this2.setState({ setEventsOnMap: filtered });
-    };
-
-    _this2.newSearch = function () {}
-    // TODO
-
-    // -- newSearch -- //
-
-    // -- setEventState -- //
-    ;
-
-    _this2.setEventState = function (data) {
-      var tracker = task.updateDateTracker(_this2.state.loadedDates, data.lastEventTime);
-
-      _this2.params.meta = data.meta;
-      _this2.setState({ events: data.events, loadedDates: tracker });
-    };
-
-    _this2.todayIsLoaded = false;
-
-    _this2.loadToday = function () {
-      var forceLoad = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-
-      var key = _this2.state.selected_day;
-      if (!_this2.todayIsLoaded || forceLoad) if (_this2.state.loadedDates[key[0]][key[1]] || forceLoad) {
-        _this2.todayIsLoaded = true;
-        _this2.filterEvents();
-      }
-    };
-
-    _this2.findEventsLoop = function (loc, limit) {
-      // let count = 0; // temp
-      var loop = function loop(obj) {
-        // count++; // temp
-        _this2.loadToday();
-        _this2.setEventState(obj);
-        if (obj.meta.next_link && obj.lastEventTime.unix < limit.unix) {
-          async.limiter(obj.meta).then(function () {
-            // console.log('loop-'+count); // temp
-            return async.findEvents(obj.meta.next_link + ('&key=' + _this2.api.key), _this2.state.events);
-          }).then(function (x) {
-            return loop(x);
-          });
-        } else {
-          // set all days to loaded
-          var end = task.clone(_this2.params.lastDay);
-          end.day++;
-          var tracker = task.updateDateTracker(_this2.state.loadedDates, end);
-          _this2.setState({ loadedDates: tracker });
-
-          _this2.loadToday(true);
-          console.log(_this2.state.events); // temp
-        }
-      };
-      // triger the loop
-      async.findEvents(_this2.api.getEventUrl(loc), _this2.state.events).then(function (x) {
-        return loop(x);
-      });
-    };
-
-    _this2.componentDidMount = function () {
-      var lastDay = time.getWeekLimit(_this2.params.loadWeeks);
-      var calendarObj = time.createCalendarObj(lastDay);
-      var tracker = time.createCalendarObj(lastDay, true);
-
-      _this2.params.lastDay = lastDay;
-      _this2.params.monthKeys = calendarObj.months;
-      _this2.setState({
-        events: calendarObj.calendar,
-        loadedDates: tracker.calendar
-        // TODO reinstate \/
-        // filterParams: {day: [calendarObj.months[0], time.now.day], categories: []},
-      });
-      async.getCategories(_this2.api.getCategoriesUrl()).then(function (x) {
-        _this2.params.categList = x;
-        return async.geoLocate();
-      }).then(function (x) {
-        _this2.setState({ search: { loc: x, radius: _this2.state.search.radius } });
-        return _this2.findEventsLoop(x, _this2.params.lastDay);
-      });
-    };
-
-    _this2.state = {
-      search: {
-        radius: 35, // max 100.00 (miles)
-        loc: [] // [38.366473, -96.262056]
-      },
-      events: {},
-      loadedDates: {},
-      selected_day: time.now.key, //time.getKey(2017, 8, 7),
-      selected_categ: [], //["Tech", "Games"],
-      setEventsOnMap: []
-    };
-    return _this2;
-  }
-  // -- filterEvents -- //
-
-  // -- newSearch -- //
-
-  // -- setEventState -- //
-
-  // -- loadToday -- //
-
-  // -- loadToday -- //
-
-  // -- findEventsLoop -- //
-
-  // -- findEventsLoop -- //
-
-  // -- componentDidMount -- //
-
-
-  _createClass(Controls, [{
-    key: 'render',
-
-    // -- componentDidMount -- //
-
-    // -- render -- //
-    value: function render() {
-      if (this.state.setEventsOnMap.length) {
-        this.setState({ setEventsOnMap: [] });
-      }
-      if (this.state.search.loc.length) {
-        var rad = this.state.search.radius;
-        this.setState({ search: { radius: rad, loc: [] } });
-      }
-      return React.createElement(
-        'div',
+function AdressSearchBar(props) {
+  var date = time.daysOfWeek[props.date.weekDay] + ', ' + time.months[props.date.month] + ' ' + props.date.day;
+  return React.createElement(
+    'div',
+    { className: 'searchBar' },
+    React.createElement(
+      'h2',
+      null,
+      props.eventsFound,
+      ' Events Within ',
+      React.createElement(
+        'u',
         null,
-        React.createElement(Map, {
-          events: this.state.setEventsOnMap,
-          center: this.state.search.loc,
-          radius: this.state.search.radius
-        })
-      );
-    }
-    // -- render -- //
-
-  }]);
-
-  return Controls;
-}(React.Component);
+        props.radius,
+        ' miles'
+      ),
+      ' of ',
+      React.createElement(
+        'u',
+        null,
+        props.loc
+      )
+    ),
+    React.createElement(
+      'h2',
+      null,
+      date
+    )
+  );
+}
 
 (function () {
-  ReactDOM.render(React.createElement(Controls, null), document.getElementById('nav'));
-  // render controls
-  // find events
-  // render map
+  ReactDOM.render(React.createElement(Controls, null), document.getElementById('controls'));
 })();

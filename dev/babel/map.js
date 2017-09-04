@@ -12,8 +12,14 @@ class Map extends React.Component
   // -- initMap -- //
   initMap = () =>
   {
-    this.mainMap = L.map('map')
+    this.mainMap = L.map('map', {zoomControl: false})
       .setView([38.366473, -96.262056], 5);
+
+    const zoomBtns = L.control.zoom(
+      {
+        position: 'topright'
+      }
+    ).addTo(this.mainMap);
     // let tiles = new L.tileLayer(
     //   'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     //   {
@@ -21,7 +27,7 @@ class Map extends React.Component
     //     +'OpenStreetMap</a> contributors'
     //   }
     // );
-    let tiles = new L.tileLayer(
+    const tiles = new L.tileLayer(
       'https://api.mapbox.com/styles/v1/mapbox/{id}/tiles/256/{z}/{x}/{y}?access_token={accessToken}',
       {
         id: 'outdoors-v10',

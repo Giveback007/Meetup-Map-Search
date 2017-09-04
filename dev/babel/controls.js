@@ -5,15 +5,14 @@ class Controls extends React.Component
     super(props);
     this.state =
     {
-      search:
-      {
-        radius: 35, // max 100.00 (miles)
-        loc: [] // [38.366473, -96.262056]
-      },
+      radius: 35, // max 100.00 (miles)
+      latLon: [], // [38.366473, -96.262056]
+      locName: '...',
       events: {},
       loadedDates: {},
-      selected_day: time.now.key,//time.getKey(2017, 8, 7),
+      selected_day: time.getTimeObj(new Date(2017, 8, 5), new Date(2017, 8, 8).getTimezoneOffset() * 60000),//time.now,//
       selected_categ: [],//["Tech", "Games"],
+      eventsFound: 0,
       setEventsOnMap: [],
     };
   }
@@ -21,54 +20,27 @@ class Controls extends React.Component
   params =
   {
     lastDay: {},
-    loadWeeks: 0, // 0 loads this month only
     monthKeys: [], // are created in order -- use as refrence
     categList: {},
     meta: {},
+    timeLimit: time.getDayLimit(1),
   }
 
   api =
   {
     key: apiKey.meetup || console.log('MEETUP API KEY ERROR'),
     omit: `description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url`,
-    getEventUrl: (loc = this.state.search.loc) =>
+    getEventUrl: (loc = this.state.latLon) =>
       `https://api.meetup.com/find/events?` +
       `&sign=true&photo-host=public&` +
       `lat=${loc[0]}&lon=${loc[1]}` +
-      `&radius=${this.state.search.radius}&fields=group_photo,group_category` +
+      `&radius=${this.state.radius}&fields=group_photo,group_category` +
       `&omit=${this.api.omit}`+
       `&key=${this.api.key}`,
     getCategoriesUrl: () =>
       `https://api.meetup.com/2/categories?` +
       `&sign=true&photo-host=public&key=${this.api.key}`
   }
-
-
-  // -- filterEvents -- //
-  filterEvents = () =>
-  {
-    const day = this.state.selected_day;
-    const categories = this.state.selected_categ;
-    let events = this.state.events[day[0]][day[1]];
-    let filtered;
-    if (!categories.length) {filtered = events}
-    else
-    {
-      filtered = events.filter(x =>
-        categories.indexOf(x.category) !== -1
-      );
-    }
-
-    this.setState({setEventsOnMap: filtered});
-  }
-  // -- filterEvents -- //
-
-  // -- newSearch -- //
-  newSearch = () =>
-  {
-    // TODO
-  }
-  // -- newSearch -- //
 
   // -- setEventState -- //
   setEventState = (data) =>
@@ -82,11 +54,57 @@ class Controls extends React.Component
   }
   // -- setEventState -- //
 
+  // -- setLocName -- //
+  setLocName = (loc) =>
+  {
+    async.reverseGeo(loc)
+      .then(x => this.setState({locName: x}));
+  }
+  // -- setLocName -- //
+
+  // -- setLocName -- //
+  setLatLon = (locStr) =>
+  {
+    async.geocode(locStr)
+      .then(x =>
+      {
+        setLocName(x)
+        this.setState({latLon: x})
+      });
+  }
+  // -- setLocName -- //
+
+  // -- filterEvents -- //
+  filterEvents = () =>
+  {
+    const day = this.state.selected_day.key;
+    const categories = this.state.selected_categ;
+    let events = this.state.events[day[0]][day[1]];
+    let filtered;
+    if (!categories.length) {filtered = events}
+    else
+    {
+      filtered = events.filter(x =>
+        categories.indexOf(x.category) !== -1
+      );
+    }
+
+    this.setState({setEventsOnMap: filtered, eventsFound: filtered.length});
+  }
+  // -- filterEvents -- //
+
+  // -- newSearch -- //
+  newSearch = () =>
+  {
+    // TODO
+  }
+  // -- newSearch -- //
+
   // -- loadToday -- //
   todayIsLoaded = false;
   loadToday = (forceLoad = false) =>
   {
-    const key = this.state.selected_day;
+    const key = this.state.selected_day.key;
     if (!this.todayIsLoaded || forceLoad)
       if(this.state.loadedDates[key[0]][key[1]] || forceLoad)
       {
@@ -138,7 +156,7 @@ class Controls extends React.Component
   // -- componentDidMount -- //
   componentDidMount = () =>
   {
-    let lastDay = time.getWeekLimit(this.params.loadWeeks);
+    let lastDay = this.params.timeLimit;
     let calendarObj = time.createCalendarObj(lastDay);
     let tracker = time.createCalendarObj(lastDay, true);
 
@@ -159,8 +177,14 @@ class Controls extends React.Component
       })
       .then(x =>
       {
-        this.setState({search: {loc: x, radius: this.state.search.radius}});
-        return this.findEventsLoop(x, this.params.lastDay);
+        this.setState(
+          {
+            latLon: x,
+            radius: this.state.radius,
+          }
+        );
+        this.setLocName(x);
+        this.findEventsLoop(x, this.params.lastDay);
       });
   }
   // -- componentDidMount -- //
@@ -172,17 +196,22 @@ class Controls extends React.Component
     {
       this.setState({setEventsOnMap: []});
     }
-    if (this.state.search.loc.length)
+    if (this.state.latLon.length)
     {
-      let rad = this.state.search.radius;
-      this.setState({ search: {radius: rad, loc: []} });
+      this.setState({latLon: []});
     }
     return(
       <div>
         <Map
           events={this.state.setEventsOnMap}
-          center={this.state.search.loc}
-          radius={this.state.search.radius}
+          center={this.state.latLon}
+          radius={this.state.radius}
+        />
+        <AdressSearchBar
+          date={this.state.selected_day}
+          eventsFound={this.state.eventsFound}
+          radius={this.state.radius}
+          loc={this.state.locName}
         />
       </div>
     );

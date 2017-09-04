@@ -32,3 +32,8 @@
 html, body {
   margin: 0;
   padding: 0; }
+
+.searchBar {
+  position: fixed;
+  top: 0;
+  z-index: 999; }

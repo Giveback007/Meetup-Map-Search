@@ -1,11 +1,14 @@
 const task = {};
 
+// -- clone -- //
 task.clone = (obj) =>
 {
 	let clone = JSON.stringify(obj);
 	return JSON.parse(clone);
 }
+// -- clone -- //
 
+// -- updateDateTracker -- //
 task.updateDateTracker = (tracker, limit) =>
 {
 	let loaded = task.clone(tracker);
@@ -30,6 +33,14 @@ task.updateDateTracker = (tracker, limit) =>
 
 	return loaded;
 }
+// -- updateDateTracker -- //
 
-// async.ajaxCall('https://api.meetup.com/2/categories?&sign=true&photo-host=public&key=457b71183481b13752d69755d97632')
-// 	.then(x => console.log(x.results))
+// -- capitalizeWords -- //
+task.capitalizeWords = (x) =>
+{
+	let str = x.toLowerCase();
+	let arr = str.split(' ');
+	arr = arr.map(x => x.charAt(0).toUpperCase() + x.slice(1));
+	return arr.join(' ');
+}
+// -- capitalizeWords -- //
