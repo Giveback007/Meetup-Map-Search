@@ -10,7 +10,7 @@ class Controls extends React.Component
       locName: '...',
       events: {},
       loadedDates: {},
-      selected_day: time.getTimeObj(new Date(2017, 8, 5), new Date(2017, 8, 8).getTimezoneOffset() * 60000),//time.now,//
+      selected_day: time.now,
       selected_categ: [],//["Tech", "Games"],
       eventsFound: 0,
       setEventsOnMap: [],
@@ -207,7 +207,7 @@ class Controls extends React.Component
           center={this.state.latLon}
           radius={this.state.radius}
         />
-        <AdressSearchBar
+        <Search
           date={this.state.selected_day}
           eventsFound={this.state.eventsFound}
           radius={this.state.radius}

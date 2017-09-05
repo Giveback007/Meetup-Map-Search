@@ -101,8 +101,7 @@ time.createCalendarObj = (limit, tracker = false) =>
 	{
 		let refDay = new Date(now.year, now.month, now.day + i);
 		let key = time.getKey(refDay.getFullYear(), refDay.getMonth(), refDay.getDate())
-		let m = key[0];//`${refDay.getFullYear()}-${time.months[refDay.getMonth()]}`
-		let d = key[1];//`${refDay.getDate()}`
+		let m = key[0], d = key[1];
 		if (!calendar[m]) {calendar[m] = {}; months.push(m)}
 
 		tracker ? calendar[m][d] = false : calendar[m][d] = [];

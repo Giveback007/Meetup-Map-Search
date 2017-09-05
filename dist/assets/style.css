@@ -1,3 +1,7 @@
+html, body {
+  margin: 0;
+  padding: 0; }
+
 #map {
   height: 100vh; }
 
@@ -29,11 +33,7 @@
     background-size: cover;
     background-position: center; }
 
-html, body {
-  margin: 0;
-  padding: 0; }
-
-.searchBar {
+.search {
   position: fixed;
   top: 0;
   z-index: 999; }

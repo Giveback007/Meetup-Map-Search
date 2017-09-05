@@ -14,7 +14,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 //@prepros-append babel/controls.js
 //@prepros-append babel/map.js
-//@prepros-append babel/adressSearchBar.js
+//@prepros-append babel/search.js
 
 //@prepros-append babel/start.js
 
@@ -152,8 +152,8 @@ time.createCalendarObj = function (limit) {
   for (var i = 0; i <= numDays; i++) {
     var refDay = new Date(now.year, now.month, now.day + i);
     var key = time.getKey(refDay.getFullYear(), refDay.getMonth(), refDay.getDate());
-    var m = key[0]; //`${refDay.getFullYear()}-${time.months[refDay.getMonth()]}`
-    var d = key[1]; //`${refDay.getDate()}`
+    var m = key[0],
+        d = key[1];
     if (!calendar[m]) {
       calendar[m] = {};months.push(m);
     }
@@ -456,7 +456,7 @@ var Controls = function (_React$Component) {
       locName: '...',
       events: {},
       loadedDates: {},
-      selected_day: time.getTimeObj(new Date(2017, 8, 5), new Date(2017, 8, 8).getTimezoneOffset() * 60000), //time.now,//
+      selected_day: time.now,
       selected_categ: [], //["Tech", "Games"],
       eventsFound: 0,
       setEventsOnMap: []
@@ -509,7 +509,7 @@ var Controls = function (_React$Component) {
           center: this.state.latLon,
           radius: this.state.radius
         }),
-        React.createElement(AdressSearchBar, {
+        React.createElement(Search, {
           date: this.state.selected_day,
           eventsFound: this.state.eventsFound,
           radius: this.state.radius,
@@ -664,27 +664,58 @@ var Map = function (_React$Component2) {
   return Map;
 }(React.Component);
 
-function AdressSearchBar(props) {
+function Search(props) {
   var date = time.daysOfWeek[props.date.weekDay] + ', ' + time.months[props.date.month] + ' ' + props.date.day;
   return React.createElement(
     'div',
-    { className: 'searchBar' },
+    { className: 'search' },
     React.createElement(
       'h2',
       null,
       props.eventsFound,
-      ' Events Within ',
+      ' Events within',
       React.createElement(
-        'u',
+        'div',
         null,
-        props.radius,
-        ' miles'
+        ' ',
+        React.createElement(
+          'a',
+          { href: '#' },
+          React.createElement(
+            'u',
+            null,
+            props.radius,
+            ' miles'
+          )
+        ),
+        ' ',
+        React.createElement(
+          'span',
+          null,
+          '...'
+        )
       ),
-      ' of ',
+      ' ',
+      'of',
       React.createElement(
-        'u',
+        'div',
         null,
-        props.loc
+        ' ',
+        React.createElement(
+          'a',
+          { href: '#' },
+          React.createElement(
+            'u',
+            null,
+            props.loc
+          )
+        ),
+        ' ',
+        React.createElement(
+          'span',
+          null,
+          '...'
+        )
       )
     ),
     React.createElement(
