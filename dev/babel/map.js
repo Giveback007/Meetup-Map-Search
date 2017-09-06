@@ -20,23 +20,23 @@ class Map extends React.Component
         position: 'bottomright'
       }
     ).addTo(this.mainMap);
-    // let tiles = new L.tileLayer(
-    //   'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    //   {
-    //     attribution: '&copy; <a href="http://openstreetmap.org/">'
-    //     +'OpenStreetMap</a> contributors'
-    //   }
-    // );
-    const tiles = new L.tileLayer(
-      'https://api.mapbox.com/styles/v1/mapbox/{id}/tiles/256/{z}/{x}/{y}?access_token={accessToken}',
+    let tiles = new L.tileLayer(
+      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       {
-        id: 'outdoors-v10',
-        accessToken: apiKey.mapbox || console.log('MAPBOX API KEY ERROR'),
-        attribution: '&copy; <a href="http://mapbox.com/">'
-        +'Mapbox</a> &copy; <a href="http://openstreetmap.org/">'
-        +'OpenStreetMap</a>'
+        attribution: '&copy; <a href="http://openstreetmap.org/">'
+        +'OpenStreetMap</a> contributors'
       }
     );
+    // const tiles = new L.tileLayer(
+    //   'https://api.mapbox.com/styles/v1/mapbox/{id}/tiles/256/{z}/{x}/{y}?access_token={accessToken}',
+    //   {
+    //     id: 'outdoors-v10',
+    //     accessToken: apiKey.mapbox || console.log('MAPBOX API KEY ERROR'),
+    //     attribution: '&copy; <a href="http://mapbox.com/">'
+    //     +'Mapbox</a> &copy; <a href="http://openstreetmap.org/">'
+    //     +'OpenStreetMap</a>'
+    //   }
+    // );
     this.mainMap.addLayer(tiles);
   }
   // -- initMap -- //

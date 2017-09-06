@@ -545,18 +545,19 @@ var Map = function (_React$Component2) {
       var zoomBtns = L.control.zoom({
         position: 'bottomright'
       }).addTo(_this2.mainMap);
-      // let tiles = new L.tileLayer(
-      //   'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      var tiles = new L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="http://openstreetmap.org/">' + 'OpenStreetMap</a> contributors'
+      });
+      // const tiles = new L.tileLayer(
+      //   'https://api.mapbox.com/styles/v1/mapbox/{id}/tiles/256/{z}/{x}/{y}?access_token={accessToken}',
       //   {
-      //     attribution: '&copy; <a href="http://openstreetmap.org/">'
-      //     +'OpenStreetMap</a> contributors'
+      //     id: 'outdoors-v10',
+      //     accessToken: apiKey.mapbox || console.log('MAPBOX API KEY ERROR'),
+      //     attribution: '&copy; <a href="http://mapbox.com/">'
+      //     +'Mapbox</a> &copy; <a href="http://openstreetmap.org/">'
+      //     +'OpenStreetMap</a>'
       //   }
       // );
-      var tiles = new L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/{id}/tiles/256/{z}/{x}/{y}?access_token={accessToken}', {
-        id: 'outdoors-v10',
-        accessToken: apiKey.mapbox || console.log('MAPBOX API KEY ERROR'),
-        attribution: '&copy; <a href="http://mapbox.com/">' + 'Mapbox</a> &copy; <a href="http://openstreetmap.org/">' + 'OpenStreetMap</a>'
-      });
       _this2.mainMap.addLayer(tiles);
     };
 
@@ -667,8 +668,18 @@ var Map = function (_React$Component2) {
 function Nav(props) {
   var date = time.daysOfWeek[props.date.weekDay] + ', ' + time.months[props.date.month] + ' ' + props.date.day;
   return React.createElement(
-    'section',
+    'nav',
     { className: 'nav' },
+    React.createElement(
+      'h1',
+      null,
+      'Meetup Map Search'
+    ),
+    React.createElement(
+      'p',
+      null,
+      '... events in the next 7 days'
+    ),
     React.createElement(
       'div',
       { className: 'search' },
@@ -764,11 +775,6 @@ function Nav(props) {
             { id: 'search_calendar' },
             date + ' ',
             React.createElement('i', { className: 'fa fa-calendar', 'aria-hidden': 'true' })
-          ),
-          React.createElement(
-            'div',
-            { id: 'search_calendar-popup' },
-            React.createElement('input', { type: 'text', placeholder: 'City or postal code' })
           )
         )
       ),
@@ -776,10 +782,28 @@ function Nav(props) {
         'div',
         { className: 'search_filter-toggle' },
         React.createElement('i', { className: 'fa fa-sort-desc', 'aria-hidden': 'true' })
+      ),
+      React.createElement(
+        'div',
+        { className: 'search_filter' },
+        React.createElement('div', { className: 'search_filter_categ' }),
+        React.createElement('div', { className: 'search_filter_calendar' })
       )
     )
   );
 }
+
+var nav = {};
+nav.radius = { id: 'search_location', state: false };
+nav.location = { id: 'search_location', state: false };
+nav.toggle = function (x) {
+  if (x.state === true) {
+    // toggle all off
+    return;
+  } else {
+    // document.getElementById('')
+  }
+};
 
 (function () {
   ReactDOM.render(React.createElement(Controls, null), document.getElementById('controls'));

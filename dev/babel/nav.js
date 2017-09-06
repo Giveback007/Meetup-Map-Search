@@ -2,8 +2,9 @@ function Nav(props)
 {
   let date = `${time.daysOfWeek[props.date.weekDay]}, ${time.months[props.date.month]} ${props.date.day}`
   return(
-    <section className='nav'>
-
+    <nav className='nav'>
+      <h1>Meetup Map Search</h1>
+      <p>... events in the next 7 days</p>
       <div className='search'>
 
         <div className='search_selector'>
@@ -47,15 +48,21 @@ function Nav(props)
               {date + ' '}
               <i className="fa fa-calendar" aria-hidden="true"></i>
             </span>
-            <div id='search_calendar-popup'>
+            {/* <div id='search_calendar-popup'>
               <input type='text' placeholder='City or postal code'/>
-            </div>
+            </div> */}
           </div>
         </div>
 
         <div className='search_filter-toggle'>
+          {/* <div>Filter</div> */}
           {/* <i className="fa fa-sort-asc" aria-hidden="true"></i> */}
           <i className="fa fa-sort-desc" aria-hidden="true"></i>
+        </div>
+
+        <div className='search_filter'>
+          <div className='search_filter_categ'></div>
+          <div className='search_filter_calendar'></div>
         </div>
 
     </div>
@@ -65,7 +72,23 @@ function Nav(props)
         <i className="fa fa-sort-asc" aria-hidden="true"></i>
       </div> */}
 
-    </section>
+    </nav>
 
   );
+}
+
+const nav = {};
+nav.radius = {id: 'search_location', state: false}
+nav.location = {id: 'search_location', state: false}
+nav.toggle = (x) =>
+{
+  if (x.state === true)
+  {
+    // toggle all off
+    return
+  }
+  else
+  {
+    // document.getElementById('')
+  }
 }

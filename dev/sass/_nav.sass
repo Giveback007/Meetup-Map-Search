@@ -4,15 +4,21 @@
   position: fixed
   top: 0
   background: rgb(246, 64, 96)
-  .search
-    margin: 100px auto -25px auto
-    text-align: center
-    display: flex
-    flex-direction: column
-    font-size: 18px
-    background: rgb(15, 23, 33)
-    color: white
-    max-width: 950px
+  color: white
+  text-align: center
+  h1
+    font-size: 35px
+    font-weight: bold
+    letter-spacing: 0
+
+.search
+  margin: 0px auto -50px auto
+  text-align: center
+  display: flex
+  flex-direction: column
+  font-size: 17px
+  background: rgb(15, 23, 33)
+  max-width: 950px
 
 
 .search_selector
@@ -24,18 +30,6 @@
     // OR POPUPS BRAKE
     position: relative
     margin: 5px
-
-.search_filter-toggle
-  // border: solid
-  width: 100%
-  // padding: -5px 0 5px 0
-  font-size: 25px
-  background: rgba(255, 255, 255, 0.05)
-  &:hover
-    background: rgba(255, 255, 255, 0.1)
-  i
-    display: block
-    padding: 0 0 10px 0
 
 #search_radius, #search_location, #search_calendar
   cursor: pointer
@@ -103,3 +97,19 @@
     margin-left: -15px
     border: 10px solid
     border-color: transparent transparent white transparent
+
+.search_filter-toggle
+  width: 100%
+  cursor: pointer
+  background: rgba(255, 255, 255, 0.05)
+  transition: all 0.25s ease
+  padding-top: 5px
+  font-weight: lighter
+  &:hover
+    background: rgba(255, 255, 255, 0.1)
+  div
+    // border: solid
+    margin: 0
+  i
+    // border: solid
+    font-size: 25px
