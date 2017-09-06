@@ -10,9 +10,10 @@
     font-size: 35px
     font-weight: bold
     letter-spacing: 0
+    margin-bottom: 0
 
 .search
-  margin: 0px auto -50px auto
+  margin: 25px auto -50px auto
   text-align: center
   display: flex
   flex-direction: column
@@ -25,13 +26,13 @@
   padding: 20px 15px
   display: flex
   justify-content: center
-  div
+  > div
     // DON'T REMOVE POSTION RELATIVE
     // OR POPUPS BRAKE
     position: relative
     margin: 5px
 
-#search_radius, #search_location, #search_calendar
+.search_radius, .search_location, .search_calendar
   cursor: pointer
   transition: all 0.5s ease
   padding: 5px 0
@@ -39,7 +40,7 @@
   &:hover
     border-bottom:  1px solid white
 
-#search_radius-popup
+#radius-popup
   font-size: 18px
   ul
     margin: 0
@@ -53,11 +54,14 @@
       list-style: none
       border-radius: 3px
       padding: 8px
+      &.active
+        color: red
+        font-weight: bold
       &:hover
         color: white
         background: rgb(246, 64, 96)
 
-#search_location-popup
+#location-popup
   padding: 12px 7px
   input[type=text]
     width: 220px
@@ -76,10 +80,10 @@
       transition: all 1s ease
       border: 1px solid rgb(31, 36, 204)
 
-#search_calendar-popup
+#calendar-popup
   // put in css for calendar
 
-#search_radius-popup, #search_location-popup, #search_calendar-popup
+.popup
   // display: none
   position: absolute
   margin-top: 21px

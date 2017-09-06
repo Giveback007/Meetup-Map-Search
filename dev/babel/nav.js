@@ -1,6 +1,17 @@
 function Nav(props)
 {
-  let date = `${time.daysOfWeek[props.date.weekDay]}, ${time.months[props.date.month]} ${props.date.day}`
+  let date = `${time.daysOfWeek[props.date.weekDay]}, ${time.months[props.date.month]} ${props.date.day}`;
+  let radius_range = props.radius_range.map(x =>
+    {
+      return(
+      <li
+        id={'radius-'+x}
+        className={props.radius === x ? 'active' : ''}
+        onClick={() => props.radius_onClick(x)}
+      >{x} miles</li>
+      );
+    });
+
   return(
     <nav className='nav'>
       <h1>Meetup Map Search</h1>
@@ -13,47 +24,38 @@ function Nav(props)
           </div>
 
           <div>
-            <span  id='search_radius'>
+            <span className='search_radius' id='radius'>
               {props.radius} miles
               {' '}<i className="fa fa-map-o" aria-hidden="true"></i>
             </span>
-            <div id='search_radius-popup'>
-              <ul>
-                <li>5 miles</li>
-                <li>10 miles</li>
-                <li>25 miles</li>
-                <li>35 miles</li>
-                <li>50 miles</li>
-                <li>100 miles</li>
-              </ul>
+            <div className='popup' id='radius-popup'>
+              <ul>{radius_range}</ul>
             </div>
           </div>
-
           <div>of</div>
-
           <div>
-            <span id='search_location'>
+            <span className='search_location' id='location'>
               {props.loc + ' '}
               <i className="fa fa-map-marker" aria-hidden="true"></i>
             </span>
-            <div id='search_location-popup'>
-              <input type='text' placeholder='City or postal code'/>
+            <div className='popup' id='location-popup'>
+              <input
+                id='location-input'
+                type='text'
+                placeholder='City or postal code'
+              />
             </div>
           </div>
-
           <div>on</div>
-
           <div>
-            <span id='search_calendar'>
+            <span className='search_calendar' id='calendar'>
               {date + ' '}
               <i className="fa fa-calendar" aria-hidden="true"></i>
             </span>
-            {/* <div id='search_calendar-popup'>
-              <input type='text' placeholder='City or postal code'/>
-            </div> */}
           </div>
         </div>
 
+        {/*  */}
         <div className='search_filter-toggle'>
           {/* <div>Filter</div> */}
           {/* <i className="fa fa-sort-asc" aria-hidden="true"></i> */}
@@ -64,6 +66,7 @@ function Nav(props)
           <div className='search_filter_categ'></div>
           <div className='search_filter_calendar'></div>
         </div>
+        {/*  */}
 
     </div>
 
@@ -78,17 +81,44 @@ function Nav(props)
 }
 
 const nav = {};
-nav.radius = {id: 'search_location', state: false}
-nav.location = {id: 'search_location', state: false}
-nav.toggle = (x) =>
+nav['radius'] = false;
+nav['location'] = false;
+
+window.onload = () => {
+// radius
+document.getElementById('radius').addEventListener('click', function()
 {
-  if (x.state === true)
+  document.getElementById('radius-popup').style.display = 'none';
+  document.getElementById('location-popup').style.display = 'none';
+  if (!nav['radius'])
   {
-    // toggle all off
-    return
+    nav['radius'] = true;
+    nav['location'] = false;
+    document.getElementById('radius-popup').style.display = 'block';
   }
   else
   {
-    // document.getElementById('')
+    nav['radius'] = false;
+    nav['location'] = false;
   }
+});
+// location
+document.getElementById('location').addEventListener('click', function()
+{
+  document.getElementById('radius-popup').style.display = 'none';
+  document.getElementById('location-popup').style.display = 'none';
+  if (!nav['location'])
+  {
+    nav['location'] = true;
+    nav['radius'] = false;
+    document.getElementById('location-popup').style.display = 'block';
+    document.getElementById('location-input').focus();
+  }
+  else
+  {
+    nav['radius'] = false;
+    nav['location'] = false;
+  }
+});
+
 }

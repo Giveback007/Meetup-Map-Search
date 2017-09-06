@@ -51,10 +51,11 @@ a {
   .nav h1 {
     font-size: 35px;
     font-weight: bold;
-    letter-spacing: 0; }
+    letter-spacing: 0;
+    margin-bottom: 0; }
 
 .search {
-  margin: 0px auto -50px auto;
+  margin: 25px auto -50px auto;
   text-align: center;
   display: -webkit-box;
   display: -webkit-flex;
@@ -79,26 +80,26 @@ a {
   -webkit-justify-content: center;
   -ms-flex-pack: center;
   justify-content: center; }
-  .search_selector div {
+  .search_selector > div {
     position: relative;
     margin: 5px; }
 
-#search_radius, #search_location, #search_calendar {
+.search_radius, .search_location, .search_calendar {
   cursor: pointer;
   -webkit-transition: all 0.5s ease;
   -o-transition: all 0.5s ease;
   transition: all 0.5s ease;
   padding: 5px 0;
   border-bottom: 1px solid #a6a6a6; }
-  #search_radius:hover, #search_location:hover, #search_calendar:hover {
+  .search_radius:hover, .search_location:hover, .search_calendar:hover {
     border-bottom: 1px solid white; }
 
-#search_radius-popup {
+#radius-popup {
   font-size: 18px; }
-  #search_radius-popup ul {
+  #radius-popup ul {
     margin: 0;
     padding: 18px 15px; }
-    #search_radius-popup ul li {
+    #radius-popup ul li {
       letter-spacing: 0px;
       color: #666666;
       width: 100px;
@@ -107,13 +108,16 @@ a {
       list-style: none;
       border-radius: 3px;
       padding: 8px; }
-      #search_radius-popup ul li:hover {
+      #radius-popup ul li.active {
+        color: red;
+        font-weight: bold; }
+      #radius-popup ul li:hover {
         color: white;
         background: #f64060; }
 
-#search_location-popup {
+#location-popup {
   padding: 12px 7px; }
-  #search_location-popup input[type=text] {
+  #location-popup input[type=text] {
     width: 220px;
     outline: 0;
     font-size: 16px;
@@ -123,16 +127,16 @@ a {
     height: 30px;
     border-radius: 5px;
     background: #fafafa; }
-    #search_location-popup input[type=text]::-webkit-input-placeholder {
+    #location-popup input[type=text]::-webkit-input-placeholder {
       color: #cccccc;
       font-style: italic; }
-    #search_location-popup input[type=text]:focus {
+    #location-popup input[type=text]:focus {
       -webkit-transition: all 1s ease;
       -o-transition: all 1s ease;
       transition: all 1s ease;
       border: 1px solid #1f24cc; }
 
-#search_radius-popup, #search_location-popup, #search_calendar-popup {
+.popup {
   position: absolute;
   margin-top: 21px;
   right: 50%;
@@ -144,7 +148,7 @@ a {
   box-shadow: 2px 3px 10px rgba(0, 0, 0, 0.4);
   z-index: 1000;
   border-radius: 5px; }
-  #search_radius-popup:after, #search_location-popup:after, #search_calendar-popup:after {
+  .popup:after {
     content: '';
     position: absolute;
     bottom: 100%;

@@ -81,6 +81,7 @@ async.findEvents = (url, allEvents) =>
 		{
 			let events = task.clone(allEvents);
 			// Forms the data
+			console.log(dt);
 			let data = dt.data.map(x =>
 			{
 				let obj = x;

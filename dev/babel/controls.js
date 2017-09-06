@@ -24,6 +24,7 @@ class Controls extends React.Component
     categList: {},
     meta: {},
     timeLimit: time.getDayLimit(1),
+    radius_range: [5, 10, 25, 35, 50, 100]
   }
 
   api =
@@ -153,6 +154,14 @@ class Controls extends React.Component
   }
   // -- findEventsLoop -- //
 
+  // -- setRadius -- //
+  setRadius = (r) =>
+  {
+    this.setState({radius: r})
+    this.findEventsLoop();
+  }
+  // -- setRadius -- //
+
   // -- componentDidMount -- //
   componentDidMount = () =>
   {
@@ -175,14 +184,7 @@ class Controls extends React.Component
         this.params.categList = x;
         return async.geoLocate()
       })
-      .then(x =>
-      {
-        this.setState(
-          {
-            latLon: x,
-            radius: this.state.radius,
-          }
-        );
+      .then( x =>{this.setState({latLon: x} );
         this.setLocName(x);
         this.findEventsLoop(x, this.params.lastDay);
       });
@@ -192,24 +194,26 @@ class Controls extends React.Component
   // -- render -- //
   render()
   {
-    if (this.state.setEventsOnMap.length)
-    {
-      this.setState({setEventsOnMap: []});
-    }
-    if (this.state.latLon.length)
-    {
-      this.setState({latLon: []});
-    }
+    // if (this.state.setEventsOnMap.length)
+    // {
+    //   this.setState({setEventsOnMap: []});
+    // }
+    // if (this.state.latLon.length)
+    // {
+    //   this.setState({latLon: []});
+    // }
     return(
       <div>
         <Map
           events={this.state.setEventsOnMap}
-          center={this.state.latLon}
+          latLon={this.state.latLon}
           radius={this.state.radius}
         />
         <Nav
           date={this.state.selected_day}
           eventsFound={this.state.eventsFound}
+          radius_range={this.params.radius_range}
+          radius_onClick={this.setRadius}
           radius={this.state.radius}
           loc={this.state.locName}
         />

@@ -4,7 +4,13 @@ class Map extends React.Component
   constructor(props)
   {
     super(props);
+    this.state =
+    {
+      events: [],
+      latLon: []
+    }
   }
+
   mainMap; // <- main variable
   centerMarker = L.marker();
   centerRadius = L.circle();
@@ -42,7 +48,7 @@ class Map extends React.Component
   // -- initMap -- //
 
   // -- newSearch -- //
-  newCenter = (loc, rds) =>
+  newSearchParams = (loc, rds) =>
   {
     this.mainMap.removeLayer(this.centerMarker);
     this.mainMap.removeLayer(this.centerRadius);
@@ -141,13 +147,15 @@ class Map extends React.Component
 
   render()
   {
-    if (this.props.center.length)
+    if (!task.isEqual(this.props.latLon, this.state.latLon) ||
+        !task.isEqual(this.props.radius, this.state.radius) )
     {
-      this.newCenter(this.props.center, this.props.radius);
+      this.setState({latLon: this.props.latLon, radius: this.state.radius})
+      this.newSearchParams(this.props.latLon, this.props.radius);
     }
-    if (this.props.events.length)
+    if (!task.isEqual(this.props.events, this.state.events))
     {
-      // console.log('render -> map', this.props.events); // temp
+      this.setState({events: this.props.events})
       this.putEventsOnMap(this.props.events);
     }
     return (null);

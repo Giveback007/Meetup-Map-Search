@@ -27,6 +27,12 @@ task.clone = function (obj) {
 };
 // -- clone -- //
 
+// -- isEqual -- //
+task.isEqual = function (obj1, obj2) {
+  return JSON.stringify(obj1) === JSON.stringify(obj2);
+};
+// -- isEqual -- //
+
 // -- updateDateTracker -- //
 task.updateDateTracker = function (tracker, limit) {
   var loaded = task.clone(tracker);
@@ -229,6 +235,7 @@ async.findEvents = function (url, allEvents) {
     var parseData = function parseData(dt) {
       var events = task.clone(allEvents);
       // Forms the data
+      console.log(dt);
       var data = dt.data.map(function (x) {
         var obj = x;
         obj.loc = obj.venue ? [obj.venue.lat, obj.venue.lon] : null;
@@ -322,7 +329,8 @@ var Controls = function (_React$Component) {
       monthKeys: [], // are created in order -- use as refrence
       categList: {},
       meta: {},
-      timeLimit: time.getDayLimit(1)
+      timeLimit: time.getDayLimit(1),
+      radius_range: [5, 10, 25, 35, 50, 100]
     };
     _this.api = {
       key: apiKey.meetup || console.log('MEETUP API KEY ERROR'),
@@ -424,6 +432,11 @@ var Controls = function (_React$Component) {
       });
     };
 
+    _this.setRadius = function (r) {
+      _this.setState({ radius: r });
+      _this.findEventsLoop();
+    };
+
     _this.componentDidMount = function () {
       var lastDay = _this.params.timeLimit;
       var calendarObj = time.createCalendarObj(lastDay);
@@ -441,10 +454,7 @@ var Controls = function (_React$Component) {
         _this.params.categList = x;
         return async.geoLocate();
       }).then(function (x) {
-        _this.setState({
-          latLon: x,
-          radius: _this.state.radius
-        });
+        _this.setState({ latLon: x });
         _this.setLocName(x);
         _this.findEventsLoop(x, _this.params.lastDay);
       });
@@ -485,6 +495,10 @@ var Controls = function (_React$Component) {
 
   // -- findEventsLoop -- //
 
+  // -- setRadius -- //
+
+  // -- setRadius -- //
+
   // -- componentDidMount -- //
 
 
@@ -495,23 +509,27 @@ var Controls = function (_React$Component) {
 
     // -- render -- //
     value: function render() {
-      if (this.state.setEventsOnMap.length) {
-        this.setState({ setEventsOnMap: [] });
-      }
-      if (this.state.latLon.length) {
-        this.setState({ latLon: [] });
-      }
+      // if (this.state.setEventsOnMap.length)
+      // {
+      //   this.setState({setEventsOnMap: []});
+      // }
+      // if (this.state.latLon.length)
+      // {
+      //   this.setState({latLon: []});
+      // }
       return React.createElement(
         'div',
         null,
         React.createElement(Map, {
           events: this.state.setEventsOnMap,
-          center: this.state.latLon,
+          latLon: this.state.latLon,
           radius: this.state.radius
         }),
         React.createElement(Nav, {
           date: this.state.selected_day,
           eventsFound: this.state.eventsFound,
+          radius_range: this.params.radius_range,
+          radius_onClick: this.setRadius,
           radius: this.state.radius,
           loc: this.state.locName
         })
@@ -561,7 +579,7 @@ var Map = function (_React$Component2) {
       _this2.mainMap.addLayer(tiles);
     };
 
-    _this2.newCenter = function (loc, rds) {
+    _this2.newSearchParams = function (loc, rds) {
       _this2.mainMap.removeLayer(_this2.centerMarker);
       _this2.mainMap.removeLayer(_this2.centerRadius);
 
@@ -616,6 +634,10 @@ var Map = function (_React$Component2) {
       _this2.mainMap.addLayer(_this2.markerCluster);
     };
 
+    _this2.state = {
+      events: [],
+      latLon: []
+    };
     return _this2;
   } // <- main variable
 
@@ -651,11 +673,12 @@ var Map = function (_React$Component2) {
   }, {
     key: 'render',
     value: function render() {
-      if (this.props.center.length) {
-        this.newCenter(this.props.center, this.props.radius);
+      if (!task.isEqual(this.props.latLon, this.state.latLon) || !task.isEqual(this.props.radius, this.state.radius)) {
+        this.setState({ latLon: this.props.latLon, radius: this.state.radius });
+        this.newSearchParams(this.props.latLon, this.props.radius);
       }
-      if (this.props.events.length) {
-        // console.log('render -> map', this.props.events); // temp
+      if (!task.isEqual(this.props.events, this.state.events)) {
+        this.setState({ events: this.props.events });
         this.putEventsOnMap(this.props.events);
       }
       return null;
@@ -667,6 +690,21 @@ var Map = function (_React$Component2) {
 
 function Nav(props) {
   var date = time.daysOfWeek[props.date.weekDay] + ', ' + time.months[props.date.month] + ' ' + props.date.day;
+  var radius_range = props.radius_range.map(function (x) {
+    return React.createElement(
+      'li',
+      {
+        id: 'radius-' + x,
+        className: props.radius === x ? 'active' : '',
+        onClick: function onClick() {
+          return props.radius_onClick(x);
+        }
+      },
+      x,
+      ' miles'
+    );
+  });
+
   return React.createElement(
     'nav',
     { className: 'nav' },
@@ -697,7 +735,7 @@ function Nav(props) {
           null,
           React.createElement(
             'span',
-            { id: 'search_radius' },
+            { className: 'search_radius', id: 'radius' },
             props.radius,
             ' miles',
             ' ',
@@ -705,40 +743,11 @@ function Nav(props) {
           ),
           React.createElement(
             'div',
-            { id: 'search_radius-popup' },
+            { className: 'popup', id: 'radius-popup' },
             React.createElement(
               'ul',
               null,
-              React.createElement(
-                'li',
-                null,
-                '5 miles'
-              ),
-              React.createElement(
-                'li',
-                null,
-                '10 miles'
-              ),
-              React.createElement(
-                'li',
-                null,
-                '25 miles'
-              ),
-              React.createElement(
-                'li',
-                null,
-                '35 miles'
-              ),
-              React.createElement(
-                'li',
-                null,
-                '50 miles'
-              ),
-              React.createElement(
-                'li',
-                null,
-                '100 miles'
-              )
+              radius_range
             )
           )
         ),
@@ -752,14 +761,18 @@ function Nav(props) {
           null,
           React.createElement(
             'span',
-            { id: 'search_location' },
+            { className: 'search_location', id: 'location' },
             props.loc + ' ',
             React.createElement('i', { className: 'fa fa-map-marker', 'aria-hidden': 'true' })
           ),
           React.createElement(
             'div',
-            { id: 'search_location-popup' },
-            React.createElement('input', { type: 'text', placeholder: 'City or postal code' })
+            { className: 'popup', id: 'location-popup' },
+            React.createElement('input', {
+              id: 'location-input',
+              type: 'text',
+              placeholder: 'City or postal code'
+            })
           )
         ),
         React.createElement(
@@ -772,7 +785,7 @@ function Nav(props) {
           null,
           React.createElement(
             'span',
-            { id: 'search_calendar' },
+            { className: 'search_calendar', id: 'calendar' },
             date + ' ',
             React.createElement('i', { className: 'fa fa-calendar', 'aria-hidden': 'true' })
           )
@@ -794,15 +807,37 @@ function Nav(props) {
 }
 
 var nav = {};
-nav.radius = { id: 'search_location', state: false };
-nav.location = { id: 'search_location', state: false };
-nav.toggle = function (x) {
-  if (x.state === true) {
-    // toggle all off
-    return;
-  } else {
-    // document.getElementById('')
-  }
+nav['radius'] = false;
+nav['location'] = false;
+
+window.onload = function () {
+  // radius
+  document.getElementById('radius').addEventListener('click', function () {
+    document.getElementById('radius-popup').style.display = 'none';
+    document.getElementById('location-popup').style.display = 'none';
+    if (!nav['radius']) {
+      nav['radius'] = true;
+      nav['location'] = false;
+      document.getElementById('radius-popup').style.display = 'block';
+    } else {
+      nav['radius'] = false;
+      nav['location'] = false;
+    }
+  });
+  // location
+  document.getElementById('location').addEventListener('click', function () {
+    document.getElementById('radius-popup').style.display = 'none';
+    document.getElementById('location-popup').style.display = 'none';
+    if (!nav['location']) {
+      nav['location'] = true;
+      nav['radius'] = false;
+      document.getElementById('location-popup').style.display = 'block';
+      document.getElementById('location-input').focus();
+    } else {
+      nav['radius'] = false;
+      nav['location'] = false;
+    }
+  });
 };
 
 (function () {
