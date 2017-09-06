@@ -14,7 +14,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 //@prepros-append babel/controls.js
 //@prepros-append babel/map.js
-//@prepros-append babel/search.js
+//@prepros-append babel/nav.js
 
 //@prepros-append babel/start.js
 
@@ -292,7 +292,7 @@ async.getCategories = function (url) {
 async.reverseGeo = function (loc) {
   return new Promise(function (resolve) {
     async.ajaxCall('https://geocode.xyz/' + loc[0] + ',' + loc[1] + '?geoit=json').then(function (x) {
-      var state = task.capitalizeWords(x.prov);
+      var state = x.prov.toUpperCase();
       var city = task.capitalizeWords(x.city);
       resolve(city + ', ' + state);
     });
@@ -451,7 +451,7 @@ var Controls = function (_React$Component) {
     };
 
     _this.state = {
-      radius: 35, // max 100.00 (miles)
+      radius: 25, // max 100.00 (miles)
       latLon: [], // [38.366473, -96.262056]
       locName: '...',
       events: {},
@@ -509,7 +509,7 @@ var Controls = function (_React$Component) {
           center: this.state.latLon,
           radius: this.state.radius
         }),
-        React.createElement(Search, {
+        React.createElement(Nav, {
           date: this.state.selected_day,
           eventsFound: this.state.eventsFound,
           radius: this.state.radius,
@@ -543,7 +543,7 @@ var Map = function (_React$Component2) {
       _this2.mainMap = L.map('map', { zoomControl: false }).setView([38.366473, -96.262056], 5);
 
       var zoomBtns = L.control.zoom({
-        position: 'topright'
+        position: 'bottomright'
       }).addTo(_this2.mainMap);
       // let tiles = new L.tileLayer(
       //   'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -664,64 +664,119 @@ var Map = function (_React$Component2) {
   return Map;
 }(React.Component);
 
-function Search(props) {
+function Nav(props) {
   var date = time.daysOfWeek[props.date.weekDay] + ', ' + time.months[props.date.month] + ' ' + props.date.day;
   return React.createElement(
-    'div',
-    { className: 'search' },
+    'section',
+    { className: 'nav' },
     React.createElement(
-      'h2',
-      null,
-      props.eventsFound,
-      ' Events within',
+      'div',
+      { className: 'search' },
       React.createElement(
         'div',
-        null,
-        ' ',
+        { className: 'search_selector' },
         React.createElement(
-          'a',
-          { href: '#' },
+          'div',
+          null,
+          props.eventsFound,
+          ' meetups within'
+        ),
+        React.createElement(
+          'div',
+          null,
           React.createElement(
-            'u',
-            null,
+            'span',
+            { id: 'search_radius' },
             props.radius,
-            ' miles'
+            ' miles',
+            ' ',
+            React.createElement('i', { className: 'fa fa-map-o', 'aria-hidden': 'true' })
+          ),
+          React.createElement(
+            'div',
+            { id: 'search_radius-popup' },
+            React.createElement(
+              'ul',
+              null,
+              React.createElement(
+                'li',
+                null,
+                '5 miles'
+              ),
+              React.createElement(
+                'li',
+                null,
+                '10 miles'
+              ),
+              React.createElement(
+                'li',
+                null,
+                '25 miles'
+              ),
+              React.createElement(
+                'li',
+                null,
+                '35 miles'
+              ),
+              React.createElement(
+                'li',
+                null,
+                '50 miles'
+              ),
+              React.createElement(
+                'li',
+                null,
+                '100 miles'
+              )
+            )
           )
         ),
-        ' ',
         React.createElement(
-          'span',
+          'div',
           null,
-          '...'
+          'of'
+        ),
+        React.createElement(
+          'div',
+          null,
+          React.createElement(
+            'span',
+            { id: 'search_location' },
+            props.loc + ' ',
+            React.createElement('i', { className: 'fa fa-map-marker', 'aria-hidden': 'true' })
+          ),
+          React.createElement(
+            'div',
+            { id: 'search_location-popup' },
+            React.createElement('input', { type: 'text', placeholder: 'City or postal code' })
+          )
+        ),
+        React.createElement(
+          'div',
+          null,
+          'on'
+        ),
+        React.createElement(
+          'div',
+          null,
+          React.createElement(
+            'span',
+            { id: 'search_calendar' },
+            date + ' ',
+            React.createElement('i', { className: 'fa fa-calendar', 'aria-hidden': 'true' })
+          ),
+          React.createElement(
+            'div',
+            { id: 'search_calendar-popup' },
+            React.createElement('input', { type: 'text', placeholder: 'City or postal code' })
+          )
         )
       ),
-      ' ',
-      'of',
       React.createElement(
         'div',
-        null,
-        ' ',
-        React.createElement(
-          'a',
-          { href: '#' },
-          React.createElement(
-            'u',
-            null,
-            props.loc
-          )
-        ),
-        ' ',
-        React.createElement(
-          'span',
-          null,
-          '...'
-        )
+        { className: 'search_filter-toggle' },
+        React.createElement('i', { className: 'fa fa-sort-desc', 'aria-hidden': 'true' })
       )
-    ),
-    React.createElement(
-      'h2',
-      null,
-      date
     )
   );
 }

@@ -17,7 +17,7 @@ class Map extends React.Component
 
     const zoomBtns = L.control.zoom(
       {
-        position: 'topright'
+        position: 'bottomright'
       }
     ).addTo(this.mainMap);
     // let tiles = new L.tileLayer(

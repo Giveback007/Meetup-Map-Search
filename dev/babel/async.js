@@ -149,7 +149,7 @@ async.reverseGeo = (loc) =>
 		async.ajaxCall(`https://geocode.xyz/${loc[0]},${loc[1]}?geoit=json`)
 			.then(x =>
 			{
-				let state = task.capitalizeWords(x.prov);
+				let state = x.prov.toUpperCase();
 				let city = task.capitalizeWords(x.city);
 				resolve(`${city}, ${state}`);
 			});

@@ -5,7 +5,7 @@ class Controls extends React.Component
     super(props);
     this.state =
     {
-      radius: 35, // max 100.00 (miles)
+      radius: 25, // max 100.00 (miles)
       latLon: [], // [38.366473, -96.262056]
       locName: '...',
       events: {},
@@ -207,7 +207,7 @@ class Controls extends React.Component
           center={this.state.latLon}
           radius={this.state.radius}
         />
-        <Search
+        <Nav
           date={this.state.selected_day}
           eventsFound={this.state.eventsFound}
           radius={this.state.radius}

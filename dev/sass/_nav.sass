@@ -1,0 +1,105 @@
+.nav
+  width: 100%
+  z-index: 999
+  position: fixed
+  top: 0
+  background: rgb(246, 64, 96)
+  .search
+    margin: 100px auto -25px auto
+    text-align: center
+    display: flex
+    flex-direction: column
+    font-size: 18px
+    background: rgb(15, 23, 33)
+    color: white
+    max-width: 950px
+
+
+.search_selector
+  padding: 20px 15px
+  display: flex
+  justify-content: center
+  div
+    // DON'T REMOVE POSTION RELATIVE
+    // OR POPUPS BRAKE
+    position: relative
+    margin: 5px
+
+.search_filter-toggle
+  // border: solid
+  width: 100%
+  // padding: -5px 0 5px 0
+  font-size: 25px
+  background: rgba(255, 255, 255, 0.05)
+  &:hover
+    background: rgba(255, 255, 255, 0.1)
+  i
+    display: block
+    padding: 0 0 10px 0
+
+#search_radius, #search_location, #search_calendar
+  cursor: pointer
+  transition: all 0.5s ease
+  padding: 5px 0
+  border-bottom: 1px solid hsl(0, 0%, 65%)
+  &:hover
+    border-bottom:  1px solid white
+
+#search_radius-popup
+  font-size: 18px
+  ul
+    margin: 0
+    padding: 18px 15px
+    li
+      letter-spacing: 0px
+      color: hsl(0, 0%, 40%)
+      width: 100px
+      text-align: left
+      cursor: pointer
+      list-style: none
+      border-radius: 3px
+      padding: 8px
+      &:hover
+        color: white
+        background: rgb(246, 64, 96)
+
+#search_location-popup
+  padding: 12px 7px
+  input[type=text]
+    width: 220px
+    outline: 0
+    font-size: 16px
+    border: 1px solid #d9d9d9
+    padding: 5px 10px
+    margin: auto
+    height: 30px
+    border-radius: 5px
+    background: hsl(0, 0%, 98%)
+    &::-webkit-input-placeholder
+      color: hsl(0, 0%, 80%)
+      font-style: italic
+    &:focus
+      transition: all 1s ease
+      border: 1px solid rgb(31, 36, 204)
+
+#search_calendar-popup
+  // put in css for calendar
+
+#search_radius-popup, #search_location-popup, #search_calendar-popup
+  // display: none
+  position: absolute
+  margin-top: 21px
+  right: 50%
+  transform: translate(55%, 0)
+  background: white
+  box-shadow: 2px 3px 10px rgba(0, 0, 0, 0.4)
+  z-index: 1000
+  border-radius: 5px
+  &:after
+    content: ''
+    position: absolute
+    bottom: 100%
+    left: 50%
+    margin-left: -15px
+    border: 10px solid
+    border-color: transparent transparent white transparent
