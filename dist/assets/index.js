@@ -33,36 +33,6 @@ task.isEqual = function (obj1, obj2) {
 };
 // -- isEqual -- //
 
-// -- updateDateTracker -- //
-task.updateDateTracker = function (tracker, limit) {
-  var loaded = task.clone(tracker);
-
-  var y = limit.year,
-      m = limit.month,
-      d = limit.day;
-  var stop = false;
-  while (!stop) {
-    d--;
-    if (d < 1) {
-      m--;d = 31;
-    }
-    if (m < 0) {
-      y--;m = 11;
-    }
-    var key = time.getKey(y, m, d);
-    if (tracker[key[0]] !== undefined) {
-      if (loaded[key[0]][key[1]] !== undefined) {
-        loaded[key[0]][key[1]] = true;
-      }
-    } else {
-      stop = true;
-    }
-  }
-
-  return loaded;
-};
-// -- updateDateTracker -- //
-
 // -- capitalizeWords -- //
 task.capitalizeWords = function (x) {
   var str = x.toLowerCase();
@@ -141,13 +111,11 @@ time.getMonthLimit = function (monthsFromNow) {
   return time.getTimeObj(end, offset);
 };
 
-//
 time.createCalendarObj = function (limit) {
   var tracker = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
   var now = time.now;
   var calendar = {};
-  var months = [];
   var oneDay = 24 * 60 * 60 * 1000;
 
   var today = Date.UTC(now.year, now.month, now.day, 23, 59, 59, 999);
@@ -161,13 +129,40 @@ time.createCalendarObj = function (limit) {
     var m = key[0],
         d = key[1];
     if (!calendar[m]) {
-      calendar[m] = {};months.push(m);
+      calendar[m] = {};
     }
 
     tracker ? calendar[m][d] = false : calendar[m][d] = [];
   }
-  calendar;
-  return { calendar: calendar, months: months };
+  return calendar;
+};
+
+time.updateDateTracker = function (tracker, limit) {
+  var loaded = task.clone(tracker);
+
+  var y = limit.year,
+      m = limit.month,
+      d = limit.day;
+  var stop = false;
+  while (!stop) {
+    d--;
+    if (d < 1) {
+      m--;d = 31;
+    }
+    if (m < 0) {
+      y--;m = 11;
+    }
+    var key = time.getKey(y, m, d);
+    if (tracker[key[0]] !== undefined) {
+      if (loaded[key[0]][key[1]] !== undefined) {
+        loaded[key[0]][key[1]] = true;
+      }
+    } else {
+      stop = true;
+    }
+  }
+
+  return loaded;
 };
 
 var async = {};
@@ -235,7 +230,6 @@ async.findEvents = function (url, allEvents) {
     var parseData = function parseData(dt) {
       var events = task.clone(allEvents);
       // Forms the data
-      console.log(dt);
       var data = dt.data.map(function (x) {
         var obj = x;
         obj.loc = obj.venue ? [obj.venue.lat, obj.venue.lon] : null;
@@ -325,9 +319,7 @@ var Controls = function (_React$Component) {
     var _this = _possibleConstructorReturn(this, (Controls.__proto__ || Object.getPrototypeOf(Controls)).call(this, props));
 
     _this.params = {
-      lastDay: {},
-      monthKeys: [], // are created in order -- use as refrence
-      categList: {},
+      events: {},
       meta: {},
       timeLimit: time.getDayLimit(1),
       radius_range: [5, 10, 25, 35, 50, 100]
@@ -335,22 +327,32 @@ var Controls = function (_React$Component) {
     _this.api = {
       key: apiKey.meetup || console.log('MEETUP API KEY ERROR'),
       omit: 'description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url',
-      getEventUrl: function getEventUrl() {
-        var loc = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this.state.latLon;
-        return 'https://api.meetup.com/find/events?' + '&sign=true&photo-host=public&' + ('lat=' + loc[0] + '&lon=' + loc[1]) + ('&radius=' + _this.state.radius + '&fields=group_photo,group_category') + ('&omit=' + _this.api.omit) + ('&key=' + _this.api.key);
+      getEventUrl: function getEventUrl(latLon, radius) {
+        return 'https://api.meetup.com/find/events?' + '&sign=true&photo-host=public&' + ('lat=' + latLon[0] + '&lon=' + latLon[1]) + ('&radius=' + radius + '&fields=group_photo,group_category') + ('&omit=' + _this.api.omit) + ('&key=' + _this.api.key);
       },
       getCategoriesUrl: function getCategoriesUrl() {
         return 'https://api.meetup.com/2/categories?' + ('&sign=true&photo-host=public&key=' + _this.api.key);
+      },
+      addKey: function addKey(url) {
+        return url + ('&key=' + _this.api.key);
       }
+    };
 
-      // -- setEventState -- //
+    _this.newSearch = function (loc, radius) {
+      var limit = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _this.params.timeLimit;
+
+      _this.params.timeLimit = limit;
+      _this.params.events = time.createCalendarObj(limit);
+      _this.todayIsLoaded = false;
+      _this.setState({ tracker: time.createCalendarObj(limit, true) });
+      _this.eventsFindLoop(loc, radius, limit);
     };
 
     _this.setEventState = function (data) {
-      var tracker = task.updateDateTracker(_this.state.loadedDates, data.lastEventTime);
+      var tracker = time.updateDateTracker(_this.state.tracker, data.lastEventTime);
 
-      _this.params.meta = data.meta;
-      _this.setState({ events: data.events, loadedDates: tracker });
+      _this.params.events = data.events;
+      _this.setState({ tracker: tracker });
     };
 
     _this.setLocName = function (loc) {
@@ -359,36 +361,29 @@ var Controls = function (_React$Component) {
       });
     };
 
-    _this.setLatLon = function (locStr) {
+    _this.geocodeLatLon = function (locStr) {
       async.geocode(locStr).then(function (x) {
         setLocName(x);
         _this.setState({ latLon: x });
+        _this.newSearch(x, _this.state.radius);
       });
     };
 
     _this.filterEvents = function () {
       var day = _this.state.selected_day.key;
-      var categories = _this.state.selected_categ;
-      var events = _this.state.events[day[0]][day[1]];
+      var categ = _this.state.selected_categ;
+      var events = _this.params.events[day[0]][day[1]];
       var filtered = void 0;
-      if (!categories.length) {
+      if (!categ.length) {
         filtered = events;
       } else {
         filtered = events.filter(function (x) {
-          return categories.indexOf(x.category) !== -1;
+          return categ.indexOf(x.category) !== -1;
         });
       }
 
-      _this.setState({ setEventsOnMap: filtered, eventsFound: filtered.length });
+      _this.setState({ eventsOnMap: filtered });
     };
-
-    _this.newSearch = function () {}
-    // TODO
-
-    // -- newSearch -- //
-
-    // -- loadToday -- //
-    ;
 
     _this.todayIsLoaded = false;
 
@@ -396,104 +391,97 @@ var Controls = function (_React$Component) {
       var forceLoad = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
       var key = _this.state.selected_day.key;
-      if (!_this.todayIsLoaded || forceLoad) if (_this.state.loadedDates[key[0]][key[1]] || forceLoad) {
+      if (!_this.todayIsLoaded || forceLoad) if (_this.state.tracker[key[0]][key[1]] || forceLoad) {
         _this.todayIsLoaded = true;
         _this.filterEvents();
       }
     };
 
-    _this.findEventsLoop = function (loc, limit) {
-      // let count = 0; // temp
+    _this.eventsFindLoop = function (loc, radius, limit) {
       var loop = function loop(obj) {
-        // count++; // temp
         _this.loadToday();
         _this.setEventState(obj);
         if (obj.meta.next_link && obj.lastEventTime.unix < limit.unix) {
           async.limiter(obj.meta).then(function () {
             // console.log('loop-'+count); // temp
-            return async.findEvents(obj.meta.next_link + ('&key=' + _this.api.key), _this.state.events);
+            return async.findEvents(_this.api.addKey(obj.meta.next_link), _this.params.events);
           }).then(function (x) {
             return loop(x);
           });
         } else {
-          // set all days to loaded
-          var end = task.clone(_this.params.lastDay);
-          end.day++;
-          var tracker = task.updateDateTracker(_this.state.loadedDates, end);
-          _this.setState({ loadedDates: tracker });
+          // set all tracker days to loaded
+          limit.day++;
+          var tracker = time.updateDateTracker(_this.state.tracker, limit);
+          _this.setState({ tracker: tracker });
 
           _this.loadToday(true);
-          console.log(_this.state.events); // temp
+          console.log(_this.params.events); // temp
         }
       };
       // triger the loop
-      async.findEvents(_this.api.getEventUrl(loc), _this.state.events).then(function (x) {
+      async.findEvents(_this.api.getEventUrl(loc, radius), _this.params.events).then(function (x) {
         return loop(x);
       });
     };
 
     _this.setRadius = function (r) {
       _this.setState({ radius: r });
-      _this.findEventsLoop();
+      _this.newSearch(_this.state.latLon, r);
     };
 
     _this.componentDidMount = function () {
-      var lastDay = _this.params.timeLimit;
-      var calendarObj = time.createCalendarObj(lastDay);
-      var tracker = time.createCalendarObj(lastDay, true);
-
-      _this.params.lastDay = lastDay;
-      _this.params.monthKeys = calendarObj.months;
-      _this.setState({
-        events: calendarObj.calendar,
-        loadedDates: tracker.calendar
-        // TODO reinstate \/
-        // filterParams: {day: [calendarObj.months[0], time.now.day], categories: []},
-      });
       async.getCategories(_this.api.getCategoriesUrl()).then(function (x) {
-        _this.params.categList = x;
+        _this.setState({ categList: x });
         return async.geoLocate();
       }).then(function (x) {
         _this.setState({ latLon: x });
         _this.setLocName(x);
-        _this.findEventsLoop(x, _this.params.lastDay);
+        return _this.newSearch(x, _this.state.radius);
       });
     };
 
     _this.state = {
       radius: 25, // max 100.00 (miles)
-      latLon: [], // [38.366473, -96.262056]
+      latLon: [],
       locName: '...',
-      events: {},
-      loadedDates: {},
-      selected_day: time.now,
+
+      categList: {},
+      selected_day: time.now, //time.getTimeObj(new Date(2017, 8, 7), new Date(2017, 8, 7).getTimezoneOffset() * 60000),//
       selected_categ: [], //["Tech", "Games"],
-      eventsFound: 0,
-      setEventsOnMap: []
+
+      tracker: {}, // for loaded days
+      eventsOnMap: []
     };
     return _this;
   }
+
+  // -- newSearch -- //
+
+  // -- newSearch -- //
+
+  // -- setEventState -- //
+
   // -- setEventState -- //
 
   // -- setLocName -- //
 
   // -- setLocName -- //
 
-  // -- setLocName -- //
+  // -- geocodeLatLon -- //
 
-  // -- setLocName -- //
-
-  // -- filterEvents -- //
+  // -- geocodeLatLon -- //
 
   // -- filterEvents -- //
 
-  // -- newSearch -- //
+  // -- filterEvents -- //
 
   // -- loadToday -- //
 
-  // -- findEventsLoop -- //
+  // -- loadToday -- //
 
-  // -- findEventsLoop -- //
+  // -- eventsFindLoop -- //
+
+  // -- eventsFindLoop -- //
 
   // -- setRadius -- //
 
@@ -509,25 +497,17 @@ var Controls = function (_React$Component) {
 
     // -- render -- //
     value: function render() {
-      // if (this.state.setEventsOnMap.length)
-      // {
-      //   this.setState({setEventsOnMap: []});
-      // }
-      // if (this.state.latLon.length)
-      // {
-      //   this.setState({latLon: []});
-      // }
       return React.createElement(
         'div',
         null,
         React.createElement(Map, {
-          events: this.state.setEventsOnMap,
+          events: this.state.eventsOnMap,
           latLon: this.state.latLon,
           radius: this.state.radius
         }),
         React.createElement(Nav, {
           date: this.state.selected_day,
-          eventsFound: this.state.eventsFound,
+          eventsFound: this.state.eventsOnMap.length,
           radius_range: this.params.radius_range,
           radius_onClick: this.setRadius,
           radius: this.state.radius,
@@ -636,7 +616,8 @@ var Map = function (_React$Component2) {
 
     _this2.state = {
       events: [],
-      latLon: []
+      latLon: [],
+      radius: 25
     };
     return _this2;
   } // <- main variable
@@ -663,19 +644,21 @@ var Map = function (_React$Component2) {
 
 
   _createClass(Map, [{
-    key: 'componentDidMount',
+    key: 'componentWillMount',
 
     // -- putEventsOnMap -- //
 
-    value: function componentDidMount() {
+    value: function componentWillMount() {
       this.initMap();
     }
   }, {
     key: 'render',
     value: function render() {
       if (!task.isEqual(this.props.latLon, this.state.latLon) || !task.isEqual(this.props.radius, this.state.radius)) {
-        this.setState({ latLon: this.props.latLon, radius: this.state.radius });
-        this.newSearchParams(this.props.latLon, this.props.radius);
+        this.setState({ latLon: this.props.latLon, radius: this.props.radius });
+        if (this.props.latLon.length) {
+          this.newSearchParams(this.props.latLon, this.props.radius);
+        }
       }
       if (!task.isEqual(this.props.events, this.state.events)) {
         this.setState({ events: this.props.events });
@@ -704,7 +687,7 @@ function Nav(props) {
       ' miles'
     );
   });
-
+  console.log(props.eventsFound);
   return React.createElement(
     'nav',
     { className: 'nav' },

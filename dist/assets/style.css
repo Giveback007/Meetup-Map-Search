@@ -137,6 +137,7 @@ a {
       border: 1px solid #1f24cc; }
 
 .popup {
+  display: none;
   position: absolute;
   margin-top: 21px;
   right: 50%;

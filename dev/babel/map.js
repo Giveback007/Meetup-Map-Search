@@ -7,7 +7,8 @@ class Map extends React.Component
     this.state =
     {
       events: [],
-      latLon: []
+      latLon: [],
+      radius: 25
     }
   }
 
@@ -44,7 +45,7 @@ class Map extends React.Component
     //   }
     // );
     this.mainMap.addLayer(tiles);
-  }
+  };
   // -- initMap -- //
 
   // -- newSearch -- //
@@ -140,7 +141,7 @@ class Map extends React.Component
   }
   // -- putEventsOnMap -- //
 
-  componentDidMount()
+  componentWillMount()
   {
     this.initMap();
   }
@@ -150,8 +151,11 @@ class Map extends React.Component
     if (!task.isEqual(this.props.latLon, this.state.latLon) ||
         !task.isEqual(this.props.radius, this.state.radius) )
     {
-      this.setState({latLon: this.props.latLon, radius: this.state.radius})
-      this.newSearchParams(this.props.latLon, this.props.radius);
+      this.setState({latLon: this.props.latLon, radius: this.props.radius})
+      if (this.props.latLon.length)
+      {
+        this.newSearchParams(this.props.latLon, this.props.radius);
+      }
     }
     if (!task.isEqual(this.props.events, this.state.events))
     {

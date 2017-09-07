@@ -11,7 +11,7 @@ function Nav(props)
       >{x} miles</li>
       );
     });
-
+    console.log(props.eventsFound);
   return(
     <nav className='nav'>
       <h1>Meetup Map Search</h1>

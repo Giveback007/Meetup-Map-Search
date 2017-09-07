@@ -84,12 +84,10 @@ time.getMonthLimit = (monthsFromNow) =>
 	return time.getTimeObj(end, offset);
 }
 
-//
 time.createCalendarObj = (limit, tracker = false) =>
 {
 	let now = time.now;
   let calendar = {};
-	let months = [];
 	let oneDay = 24 * 60 * 60 * 1000;
 
   let today = Date.UTC(now.year, now.month, now.day, 23, 59, 59, 999);
@@ -102,10 +100,34 @@ time.createCalendarObj = (limit, tracker = false) =>
 		let refDay = new Date(now.year, now.month, now.day + i);
 		let key = time.getKey(refDay.getFullYear(), refDay.getMonth(), refDay.getDate())
 		let m = key[0], d = key[1];
-		if (!calendar[m]) {calendar[m] = {}; months.push(m)}
+		if (!calendar[m]) {calendar[m] = {}}
 
 		tracker ? calendar[m][d] = false : calendar[m][d] = [];
 	}
-	calendar
-  return {calendar, months};
+  return calendar;
+}
+
+time.updateDateTracker = (tracker, limit) =>
+{
+	let loaded = task.clone(tracker);
+
+	let y = limit.year, m = limit.month, d = limit.day;
+	let stop = false;
+	while (!stop)
+	{
+		d--;
+		if (d < 1) {m--; d = 31}
+		if (m < 0) {y--; m = 11}
+		let key = time.getKey(y, m, d);
+		if (tracker[key[0]] !== undefined)
+		{
+			if (loaded[key[0]][key[1]] !== undefined)
+			{
+				loaded[key[0]][key[1]] = true;
+			}
+		}
+		else { stop = true }
+	}
+
+	return loaded;
 }
