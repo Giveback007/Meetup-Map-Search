@@ -15,6 +15,8 @@ class Controls extends React.Component
 
       tracker: {}, // for loaded days
       eventsOnMap: [],
+
+      locInputValue: ''
     };
   };
 
@@ -22,7 +24,7 @@ class Controls extends React.Component
   {
     events: {},
     meta: {},
-    timeLimit: time.getDayLimit(1),
+    timeLimit: time.getDayLimit(0),
     radius_range: [5, 10, 25, 35, 50, 100]
   };
 
@@ -52,7 +54,7 @@ class Controls extends React.Component
     this.todayIsLoaded = false;
     this.setState({tracker: time.createCalendarObj(limit, true)});
     this.eventsFindLoop(loc, radius, limit);
-  }
+  };
   // -- newSearch -- //
 
   // -- setEventState -- //
@@ -64,7 +66,7 @@ class Controls extends React.Component
 
     this.params.events = data.events;
     this.setState({tracker: tracker});
-  }
+  };
   // -- setEventState -- //
 
   // -- setLocName -- //
@@ -72,21 +74,37 @@ class Controls extends React.Component
   {
     async.reverseGeo(loc)
       .then(x => this.setState({locName: x}));
-  }
+  };
   // -- setLocName -- //
 
-  // -- geocodeLatLon -- //
-  geocodeLatLon = (locStr) =>
+  // -- setRadius -- //
+  setRadius = (r) =>
   {
+    this.setState({radius: r});
+    this.newSearch(this.state.latLon, r);
+  };
+  // -- setRadius -- //
+
+  // -- geocodeLatLon -- //
+  setLatLonViaGeocode = (locStr = this.state.locInputValue) =>
+  {
+    console.log(locStr);
     async.geocode(locStr)
       .then(x =>
       {
-        setLocName(x)
+        this.setLocName(x)
         this.setState({latLon: x})
         this.newSearch(x, this.state.radius);
       });
-  }
+  };
   // -- geocodeLatLon -- //
+
+  // -- handleChange_locValue -- //
+  handleChange_locValue = (e) =>
+  {
+    this.setState({locInputValue: e.target.value});
+  }
+  // -- handleChange_locValue -- //
 
   // -- filterEvents -- //
   filterEvents = () =>
@@ -104,7 +122,7 @@ class Controls extends React.Component
     }
 
     this.setState({eventsOnMap: filtered});
-  }
+  };
   // -- filterEvents -- //
 
   // -- loadToday -- //
@@ -118,7 +136,7 @@ class Controls extends React.Component
         this.todayIsLoaded = true;
         this.filterEvents();
       }
-  }
+  };
   // -- loadToday -- //
 
   // -- eventsFindLoop -- //
@@ -132,7 +150,6 @@ class Controls extends React.Component
       {
         async.limiter(obj.meta)
           .then(() => {
-            // console.log('loop-'+count); // temp
             return async.findEvents(
               this.api.addKey(obj.meta.next_link),
               this.params.events
@@ -154,16 +171,8 @@ class Controls extends React.Component
     // triger the loop
     async.findEvents(this.api.getEventUrl(loc, radius), this.params.events)
       .then(x => loop(x));
-  }
+  };
   // -- eventsFindLoop -- //
-
-  // -- setRadius -- //
-  setRadius = (r) =>
-  {
-    this.setState({radius: r});
-    this.newSearch(this.state.latLon, r);
-  }
-  // -- setRadius -- //
 
   // -- componentDidMount -- //
   componentDidMount = () =>
@@ -180,7 +189,7 @@ class Controls extends React.Component
         this.setLocName(x);
         return this.newSearch(x, this.state.radius);
       });
-  }
+  };
   // -- componentDidMount -- //
 
   // -- render -- //
@@ -199,10 +208,13 @@ class Controls extends React.Component
           radius_range={this.params.radius_range}
           radius_onClick={this.setRadius}
           radius={this.state.radius}
+          loc_onSubmit={this.setLatLonViaGeocode}
+          loc_inputValue={this.state.locInputValue}
+          loc_inputHandleChange={this.handleChange_locValue}
           loc={this.state.locName}
         />
       </div>
     );
-  }
+  };
   // -- render -- //
-}
+};

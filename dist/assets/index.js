@@ -204,8 +204,8 @@ async.limiter = function (meta) {
 // -- geoLocate -- //
 async.geoLocate = function () {
   return new Promise(function (resolve, reject) {
-    console.log('loc preset to [41.957819, -87.994403], fix it!');
-    resolve([41.957819, -87.994403]); // temp
+    // console.log('loc preset to [41.957819, -87.994403], fix it!');
+    // resolve([41.957819, -87.994403]); // temp
     var options = {
       enableHighAccuracy: true,
       maximumAge: Infinity
@@ -216,9 +216,9 @@ async.geoLocate = function () {
     };
     var error = function error(err) {
       console.log(err, 'put in custom location');
-      resolve([41.957819, -87.994403]);
+      // resolve([41.957819, -87.994403]);
     };
-    // navigator.geolocation.getCurrentPosition(success, error, options);
+    navigator.geolocation.getCurrentPosition(success, error, options);
   });
 };
 // -- geoLocate -- //
@@ -304,8 +304,9 @@ async.reverseGeo = function (loc) {
 // -- geocode -- //
 async.geocode = function (locStr) {
   return new Promise(function (resolve) {
-    async.ajaxCall('https://geocode.xyz/' + locStr + '%20usa?geoit=json').then(function (x) {
-      return resolve([x.latt.x.longt]);
+    async.ajaxCall('https://geocode.xyz/' + locStr + '?geoit=json').then(function (x) {
+      console.log('test', x);
+      resolve([x.latt, x.longt]);
     });
   });
 };
@@ -321,7 +322,7 @@ var Controls = function (_React$Component) {
     _this.params = {
       events: {},
       meta: {},
-      timeLimit: time.getDayLimit(1),
+      timeLimit: time.getDayLimit(0),
       radius_range: [5, 10, 25, 35, 50, 100]
     };
     _this.api = {
@@ -361,12 +362,24 @@ var Controls = function (_React$Component) {
       });
     };
 
-    _this.geocodeLatLon = function (locStr) {
+    _this.setRadius = function (r) {
+      _this.setState({ radius: r });
+      _this.newSearch(_this.state.latLon, r);
+    };
+
+    _this.setLatLonViaGeocode = function () {
+      var locStr = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this.state.locInputValue;
+
+      console.log(locStr);
       async.geocode(locStr).then(function (x) {
-        setLocName(x);
+        _this.setLocName(x);
         _this.setState({ latLon: x });
         _this.newSearch(x, _this.state.radius);
       });
+    };
+
+    _this.handleChange_locValue = function (e) {
+      _this.setState({ locInputValue: e.target.value });
     };
 
     _this.filterEvents = function () {
@@ -403,7 +416,6 @@ var Controls = function (_React$Component) {
         _this.setEventState(obj);
         if (obj.meta.next_link && obj.lastEventTime.unix < limit.unix) {
           async.limiter(obj.meta).then(function () {
-            // console.log('loop-'+count); // temp
             return async.findEvents(_this.api.addKey(obj.meta.next_link), _this.params.events);
           }).then(function (x) {
             return loop(x);
@@ -422,11 +434,6 @@ var Controls = function (_React$Component) {
       async.findEvents(_this.api.getEventUrl(loc, radius), _this.params.events).then(function (x) {
         return loop(x);
       });
-    };
-
-    _this.setRadius = function (r) {
-      _this.setState({ radius: r });
-      _this.newSearch(_this.state.latLon, r);
     };
 
     _this.componentDidMount = function () {
@@ -450,7 +457,9 @@ var Controls = function (_React$Component) {
       selected_categ: [], //["Tech", "Games"],
 
       tracker: {}, // for loaded days
-      eventsOnMap: []
+      eventsOnMap: [],
+
+      locInputValue: ''
     };
     return _this;
   }
@@ -467,9 +476,17 @@ var Controls = function (_React$Component) {
 
   // -- setLocName -- //
 
+  // -- setRadius -- //
+
+  // -- setRadius -- //
+
   // -- geocodeLatLon -- //
 
   // -- geocodeLatLon -- //
+
+  // -- handleChange_locValue -- //
+
+  // -- handleChange_locValue -- //
 
   // -- filterEvents -- //
 
@@ -482,10 +499,6 @@ var Controls = function (_React$Component) {
   // -- eventsFindLoop -- //
 
   // -- eventsFindLoop -- //
-
-  // -- setRadius -- //
-
-  // -- setRadius -- //
 
   // -- componentDidMount -- //
 
@@ -511,19 +524,22 @@ var Controls = function (_React$Component) {
           radius_range: this.params.radius_range,
           radius_onClick: this.setRadius,
           radius: this.state.radius,
+          loc_onSubmit: this.setLatLonViaGeocode,
+          loc_inputValue: this.state.locInputValue,
+          loc_inputHandleChange: this.handleChange_locValue,
           loc: this.state.locName
         })
       );
     }
-    // -- render -- //
-
   }]);
 
   return Controls;
 }(React.Component);
 
-// This React class encapsulates the leaflet map
+// -- render -- //
+;
 
+// This React class encapsulates the leaflet map
 
 var Map = function (_React$Component2) {
   _inherits(Map, _React$Component2);
@@ -680,14 +696,18 @@ function Nav(props) {
         id: 'radius-' + x,
         className: props.radius === x ? 'active' : '',
         onClick: function onClick() {
-          return props.radius_onClick(x);
+          nav.closePopups(true);
+          props.radius_onClick(x);
         }
       },
       x,
       ' miles'
     );
   });
-  console.log(props.eventsFound);
+  function handleSubmit(e) {
+    e.preventDefault();
+    props.loc_onSubmit(props.loc_inputValue);
+  }
   return React.createElement(
     'nav',
     { className: 'nav' },
@@ -751,11 +771,18 @@ function Nav(props) {
           React.createElement(
             'div',
             { className: 'popup', id: 'location-popup' },
-            React.createElement('input', {
-              id: 'location-input',
-              type: 'text',
-              placeholder: 'City or postal code'
-            })
+            React.createElement(
+              'form',
+              { id: 'location-search', onSubmit: handleSubmit },
+              React.createElement('input', {
+                id: 'location-input',
+                type: 'text',
+                name: 'location-input',
+                onChange: props.loc_inputHandleChange,
+                value: props.loc_inputValue,
+                placeholder: 'City or postal code'
+              })
+            )
           )
         ),
         React.createElement(
@@ -793,11 +820,21 @@ var nav = {};
 nav['radius'] = false;
 nav['location'] = false;
 
+nav.closePopups = function () {
+  var offAll = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+  document.getElementById('radius-popup').style.display = 'none';
+  document.getElementById('location-popup').style.display = 'none';
+  if (offAll) {
+    nav['radius'] = false;
+    nav['location'] = false;
+  }
+};
+
 window.onload = function () {
   // radius
   document.getElementById('radius').addEventListener('click', function () {
-    document.getElementById('radius-popup').style.display = 'none';
-    document.getElementById('location-popup').style.display = 'none';
+    nav.closePopups();
     if (!nav['radius']) {
       nav['radius'] = true;
       nav['location'] = false;
@@ -809,8 +846,7 @@ window.onload = function () {
   });
   // location
   document.getElementById('location').addEventListener('click', function () {
-    document.getElementById('radius-popup').style.display = 'none';
-    document.getElementById('location-popup').style.display = 'none';
+    nav.closePopups();
     if (!nav['location']) {
       nav['location'] = true;
       nav['radius'] = false;

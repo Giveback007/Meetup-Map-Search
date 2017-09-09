@@ -49,8 +49,8 @@ async.geoLocate = () =>
 {
 	return new Promise((resolve, reject) =>
 	{
-		console.log('loc preset to [41.957819, -87.994403], fix it!');
-		resolve([41.957819, -87.994403]); // temp
+		// console.log('loc preset to [41.957819, -87.994403], fix it!');
+		// resolve([41.957819, -87.994403]); // temp
 		const options =
 		{
 			enableHighAccuracy: true,
@@ -64,9 +64,9 @@ async.geoLocate = () =>
 		const error = (err) =>
 		{
 			console.log(err, 'put in custom location');
-			resolve([41.957819, -87.994403]);
+			// resolve([41.957819, -87.994403]);
 		}
-		// navigator.geolocation.getCurrentPosition(success, error, options);
+		navigator.geolocation.getCurrentPosition(success, error, options);
 	});
 }
 // -- geoLocate -- //
@@ -161,7 +161,11 @@ async.reverseGeo = (loc) =>
 async.geocode = (locStr) =>
 {
 	return new Promise(resolve => {
-		async.ajaxCall(`https://geocode.xyz/${locStr}%20usa?geoit=json`)
-			.then( x => resolve([x.latt. x.longt]) )
+		async.ajaxCall(`https://geocode.xyz/${locStr}?geoit=json`)
+			.then(x =>
+				{
+					console.log('test', x);
+					resolve([x.latt, x.longt])
+				})
 	});
 }

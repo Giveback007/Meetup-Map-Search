@@ -7,11 +7,21 @@ function Nav(props)
       <li
         id={'radius-'+x}
         className={props.radius === x ? 'active' : ''}
-        onClick={() => props.radius_onClick(x)}
+        onClick={
+          () =>
+          {
+            nav.closePopups(true);
+            props.radius_onClick(x);
+          }
+        }
       >{x} miles</li>
       );
     });
-    console.log(props.eventsFound);
+  function handleSubmit(e)
+  {
+    e.preventDefault();
+    props.loc_onSubmit(props.loc_inputValue);
+  }
   return(
     <nav className='nav'>
       <h1>Meetup Map Search</h1>
@@ -39,11 +49,17 @@ function Nav(props)
               <i className="fa fa-map-marker" aria-hidden="true"></i>
             </span>
             <div className='popup' id='location-popup'>
-              <input
-                id='location-input'
-                type='text'
-                placeholder='City or postal code'
-              />
+              <form id='location-search' onSubmit={handleSubmit}>
+                <input
+                  id='location-input'
+                  type='text'
+                  name='location-input'
+                  onChange={props.loc_inputHandleChange}
+                  value={props.loc_inputValue}
+                  placeholder='City or postal code'
+                />
+                {/* <input type='submit' style={{display: 'none'}}/> */}
+            </form>
             </div>
           </div>
           <div>on</div>
@@ -84,12 +100,22 @@ const nav = {};
 nav['radius'] = false;
 nav['location'] = false;
 
+nav.closePopups = (offAll = false) =>
+{
+  document.getElementById('radius-popup').style.display = 'none';
+  document.getElementById('location-popup').style.display = 'none';
+  if (offAll)
+  {
+    nav['radius'] = false;
+    nav['location'] = false;
+  }
+}
+
 window.onload = () => {
 // radius
 document.getElementById('radius').addEventListener('click', function()
 {
-  document.getElementById('radius-popup').style.display = 'none';
-  document.getElementById('location-popup').style.display = 'none';
+  nav.closePopups();
   if (!nav['radius'])
   {
     nav['radius'] = true;
@@ -105,8 +131,7 @@ document.getElementById('radius').addEventListener('click', function()
 // location
 document.getElementById('location').addEventListener('click', function()
 {
-  document.getElementById('radius-popup').style.display = 'none';
-  document.getElementById('location-popup').style.display = 'none';
+  nav.closePopups();
   if (!nav['location'])
   {
     nav['location'] = true;
