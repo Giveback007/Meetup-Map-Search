@@ -1,22 +1,37 @@
 function Nav(props)
 {
   let date = `${time.daysOfWeek[props.date.weekDay]}, ${time.months[props.date.month]} ${props.date.day}`;
+
   let radius_range = props.radius_range.map(x =>
-    {
-      return(
-      <li
-        id={'radius-'+x}
-        className={props.radius === x ? 'active' : ''}
-        onClick={
-          () =>
-          {
-            props.toggle('radius');
-            props.radius_onClick(x);
-          }
+  {
+    return(
+    <li
+      id={'radius-'+x}
+      className={props.radius === x ? 'active' : ''}
+      onClick={
+        () =>
+        {
+          props.toggle('radius');
+          props.radius_onClick(x);
         }
-      >{x} miles</li>
-      );
-    });
+      }
+    >{x} miles</li>
+    );
+  });
+
+  let categList = props.categ_list.map(x =>
+  {
+    let name = props.categ_stateOf.indexOf(x) !== -1 ? 'on' : 'off'
+    return(
+      <span
+        onClick={() => props.categ_onClick(x)}
+        className={name}
+      >
+        {x}
+      </span>
+    );
+  });
+
   function handleSubmit(e)
   {
     e.preventDefault();
@@ -44,7 +59,7 @@ function Nav(props)
             <div
               className='popup'
               id='radius-popup'
-              style={props.toggleState.radius ? {} : {display: 'none'}}
+              style={props.toggle_stateOf.radius ? {} : {display: 'none'}}
             >
               <ul>{radius_range}</ul>
             </div>
@@ -62,7 +77,7 @@ function Nav(props)
             <div
               className='popup'
               id='location-popup'
-              style={props.toggleState.location ? {} : {display: 'none'}}
+              style={props.toggle_stateOf.location ? {} : {display: 'none'}}
             >
               <form id='location-search' onSubmit={handleSubmit}>
                 <input
@@ -88,11 +103,15 @@ function Nav(props)
 
         {/*  */}
         <div
-          className={`search_filter ${props.toggleState.filter ? 'on' : 'off'}`}
+          className={`search_filter ${props.toggle_stateOf.filter ? 'on' : 'off'}`}
         >
+
           <div className='line'/>
-          <div className='search_filter_categ'>insert categ here</div>
-          <div className='search_filter_calendar'>insert calendar here</div>
+
+          <div className='search_filter_calendar'>{/*/insert calendar here/*/}</div>
+
+          <h3>Categories</h3>
+          <div className='search_filter_categ'>{categList}</div>
 
         </div>
         <div
@@ -100,7 +119,7 @@ function Nav(props)
           onClick={() => {props.toggle('filter')}}
         >
           {/* <div>Filter</div> */}
-          {props.toggleState.filter ?
+          {props.toggle_stateOf.filter ?
             <i className="fa fa-sort-asc" aria-hidden="true"></i> :
             <i className="fa fa-sort-desc" aria-hidden="true"></i>
           }
@@ -108,12 +127,10 @@ function Nav(props)
         {/*  */}
 
         {/* onClick={() => {props.toggle('location')}} */}
-        {/* style={props.toggleState.location ? {} : {display: 'none'}} */}
+        {/* style={props.toggle_stateOf.location ? {} : {display: 'none'}} */}
 
     </div>
 
-
-    </nav>
-
+  </nav>
   );
 }

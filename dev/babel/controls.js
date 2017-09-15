@@ -89,6 +89,23 @@ class Controls extends React.Component
   }
   // -- setToggle --//
 
+  // -- setCateg -- //
+  setCateg = (target) =>
+  {
+    let tempArr = this.state.selected_categ
+    let idx = tempArr.indexOf(target);
+    if (idx === -1) {tempArr.push(target)}
+    else
+    {
+      delete tempArr[idx]
+      tempArr = tempArr.filter(x => x)
+    }
+    this.setState({selected_categ: tempArr});
+    this.filterEvents(tempArr);
+  }
+  // -- setCateg -- //
+
+
   // -- setEventState -- //
   setEventState = (data) =>
   {
@@ -141,10 +158,9 @@ class Controls extends React.Component
   // -- handleChange_locValue -- //
 
   // -- filterEvents -- //
-  filterEvents = () =>
+  filterEvents = (categ = this.state.selected_categ) =>
   {
     let day = this.state.selected_day.key;
-    let categ = this.state.selected_categ;
     let events = this.params.events[day[0]][day[1]];
     let filtered;
     if (!categ.length) {filtered = events}
@@ -216,7 +232,6 @@ class Controls extends React.Component
       .then(x =>
       {
         this.setState({categList: x})
-        console.log('got list, now geoLocate');
         return async.geoLocate();
       })
       .then(x =>
@@ -245,8 +260,11 @@ class Controls extends React.Component
           radius={this.state.radius}
         />
         <Nav
+          categ_list={this.state.categList}
+          categ_stateOf={this.state.selected_categ}
+          categ_onClick={this.setCateg}
           toggle={this.setToggle}
-          toggleState={this.state.toggle}
+          toggle_stateOf={this.state.toggle}
           date={this.state.selected_day}
           eventsFound={this.state.eventsOnMap.length}
           radius_range={this.params.radius_range}

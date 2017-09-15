@@ -370,6 +370,21 @@ var Controls = function (_React$Component) {
       _this.setState({ toggle: tempObj });
     };
 
+    _this.setCateg = function (target) {
+      var tempArr = _this.state.selected_categ;
+      var idx = tempArr.indexOf(target);
+      if (idx === -1) {
+        tempArr.push(target);
+      } else {
+        delete tempArr[idx];
+        tempArr = tempArr.filter(function (x) {
+          return x;
+        });
+      }
+      _this.setState({ selected_categ: tempArr });
+      _this.filterEvents(tempArr);
+    };
+
     _this.setEventState = function (data) {
       var tracker = time.updateDateTracker(_this.state.tracker, data.lastEventTime);
 
@@ -405,8 +420,9 @@ var Controls = function (_React$Component) {
     };
 
     _this.filterEvents = function () {
+      var categ = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this.state.selected_categ;
+
       var day = _this.state.selected_day.key;
-      var categ = _this.state.selected_categ;
       var events = _this.params.events[day[0]][day[1]];
       var filtered = void 0;
       if (!categ.length) {
@@ -462,7 +478,6 @@ var Controls = function (_React$Component) {
       _this.popupClosedState = task.clone(_this.state.toggle);
       async.getCategories(_this.api.getCategoriesUrl()).then(function (x) {
         _this.setState({ categList: x });
-        console.log('got list, now geoLocate');
         return async.geoLocate();
       }).then(function (x) {
         return _this.newSearch(x, _this.state.radius);
@@ -508,6 +523,11 @@ var Controls = function (_React$Component) {
   // defined in componentDidMount
 
   // -- setToggle --//
+
+  // -- setCateg -- //
+
+  // -- setCateg -- //
+
 
   // -- setEventState -- //
 
@@ -566,8 +586,11 @@ var Controls = function (_React$Component) {
           radius: this.state.radius
         }),
         React.createElement(Nav, {
+          categ_list: this.state.categList,
+          categ_stateOf: this.state.selected_categ,
+          categ_onClick: this.setCateg,
           toggle: this.setToggle,
-          toggleState: this.state.toggle,
+          toggle_stateOf: this.state.toggle,
           date: this.state.selected_day,
           eventsFound: this.state.eventsOnMap.length,
           radius_range: this.params.radius_range,
@@ -756,6 +779,7 @@ var Map = function (_React$Component2) {
 
 function Nav(props) {
   var date = time.daysOfWeek[props.date.weekDay] + ', ' + time.months[props.date.month] + ' ' + props.date.day;
+
   var radius_range = props.radius_range.map(function (x) {
     return React.createElement(
       'li',
@@ -771,6 +795,21 @@ function Nav(props) {
       ' miles'
     );
   });
+
+  var categList = props.categ_list.map(function (x) {
+    var name = props.categ_stateOf.indexOf(x) !== -1 ? 'on' : 'off';
+    return React.createElement(
+      'span',
+      {
+        onClick: function onClick() {
+          return props.categ_onClick(x);
+        },
+        className: name
+      },
+      x
+    );
+  });
+
   function handleSubmit(e) {
     e.preventDefault();
     props.loc_onSubmit();
@@ -816,7 +855,7 @@ function Nav(props) {
             {
               className: 'popup',
               id: 'radius-popup',
-              style: props.toggleState.radius ? {} : { display: 'none' }
+              style: props.toggle_stateOf.radius ? {} : { display: 'none' }
             },
             React.createElement(
               'ul',
@@ -850,7 +889,7 @@ function Nav(props) {
             {
               className: 'popup',
               id: 'location-popup',
-              style: props.toggleState.location ? {} : { display: 'none' }
+              style: props.toggle_stateOf.location ? {} : { display: 'none' }
             },
             React.createElement(
               'form',
@@ -885,18 +924,19 @@ function Nav(props) {
       React.createElement(
         'div',
         {
-          className: 'search_filter ' + (props.toggleState.filter ? 'on' : 'off')
+          className: 'search_filter ' + (props.toggle_stateOf.filter ? 'on' : 'off')
         },
         React.createElement('div', { className: 'line' }),
+        React.createElement('div', { className: 'search_filter_calendar' }),
         React.createElement(
-          'div',
-          { className: 'search_filter_categ' },
-          'insert categ here'
+          'h3',
+          null,
+          'Categories'
         ),
         React.createElement(
           'div',
-          { className: 'search_filter_calendar' },
-          'insert calendar here'
+          { className: 'search_filter_categ' },
+          categList
         )
       ),
       React.createElement(
@@ -907,7 +947,7 @@ function Nav(props) {
             props.toggle('filter');
           }
         },
-        props.toggleState.filter ? React.createElement('i', { className: 'fa fa-sort-asc', 'aria-hidden': 'true' }) : React.createElement('i', { className: 'fa fa-sort-desc', 'aria-hidden': 'true' })
+        props.toggle_stateOf.filter ? React.createElement('i', { className: 'fa fa-sort-asc', 'aria-hidden': 'true' }) : React.createElement('i', { className: 'fa fa-sort-desc', 'aria-hidden': 'true' })
       )
     )
   );
