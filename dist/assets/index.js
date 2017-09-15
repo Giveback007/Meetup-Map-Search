@@ -204,19 +204,13 @@ async.limiter = function (meta) {
 // -- geoLocate -- //
 async.geoLocate = function () {
   return new Promise(function (resolve, reject) {
-    // console.log('loc preset to [41.957819, -87.994403], fix it!');
-    // resolve([41.957819, -87.994403]); // temp
-    var options = {
-      enableHighAccuracy: true,
-      maximumAge: Infinity
-    };
+    var options = { maximumAge: Infinity };
     var success = function success(pos) {
       var crd = pos.coords;
       resolve([crd.latitude, crd.longitude]);
     };
     var error = function error(err) {
-      console.log(err, 'put in custom location');
-      // resolve([41.957819, -87.994403]);
+      resolve(false);
     };
     navigator.geolocation.getCurrentPosition(success, error, options);
   });
@@ -280,6 +274,7 @@ async.getCategories = function (url) {
       data.results.map(function (x) {
         arr.push(x.name);
       });
+      console.log('getCategories', arr);
       return arr;
     }
     async.ajaxCall(url).then(function (x) {
@@ -305,8 +300,14 @@ async.reverseGeo = function (loc) {
 async.geocode = function (locStr) {
   return new Promise(function (resolve) {
     async.ajaxCall('https://geocode.xyz/' + locStr + '?geoit=json').then(function (x) {
-      console.log('test', x);
-      resolve([x.latt, x.longt]);
+      console.log('geocode', x);
+      if (x.error) {
+        console.log('x.error', x);
+        console.log('geocode error handeled'); // TEMP
+        resolve([false, 'Location Not Found, Please Try Again']);
+        return;
+      }
+      resolve([true, [x.latt, x.longt]]);
     });
   });
 };
@@ -342,11 +343,31 @@ var Controls = function (_React$Component) {
     _this.newSearch = function (loc, radius) {
       var limit = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _this.params.timeLimit;
 
+      _this.setToggle('all');
+      if (!loc) {
+        _this.setState({ locErr: true });return;
+      }
+
       _this.params.timeLimit = limit;
       _this.params.events = time.createCalendarObj(limit);
       _this.todayIsLoaded = false;
-      _this.setState({ tracker: time.createCalendarObj(limit, true) });
+      _this.setLocName(loc);
+      _this.setState({
+        tracker: time.createCalendarObj(limit, true),
+        latLon: loc,
+        locErr: false,
+        locInputValue: ''
+      });
       _this.eventsFindLoop(loc, radius, limit);
+    };
+
+    _this.setToggle = function (target) {
+      if (target === 'all') {
+        _this.setState({ toggle: _this.popupClosedState });
+      }
+      var tempObj = task.clone(_this.popupClosedState);
+      tempObj[target] = !_this.state.toggle[target];
+      _this.setState({ toggle: tempObj });
     };
 
     _this.setEventState = function (data) {
@@ -370,11 +391,12 @@ var Controls = function (_React$Component) {
     _this.setLatLonViaGeocode = function () {
       var locStr = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this.state.locInputValue;
 
-      console.log(locStr);
       async.geocode(locStr).then(function (x) {
-        _this.setLocName(x);
-        _this.setState({ latLon: x });
-        _this.newSearch(x, _this.state.radius);
+        if (!x[0]) {
+          _this.setState({ locErrMessage: x[1], locErr: true });
+          return;
+        }
+        _this.newSearch(x[1], _this.state.radius);
       });
     };
 
@@ -437,14 +459,19 @@ var Controls = function (_React$Component) {
     };
 
     _this.componentDidMount = function () {
+      _this.popupClosedState = task.clone(_this.state.toggle);
       async.getCategories(_this.api.getCategoriesUrl()).then(function (x) {
         _this.setState({ categList: x });
+        console.log('got list, now geoLocate');
         return async.geoLocate();
       }).then(function (x) {
-        _this.setState({ latLon: x });
-        _this.setLocName(x);
         return _this.newSearch(x, _this.state.radius);
       });
+    };
+
+    _this.locErr_submitForm = function (e) {
+      e.preventDefault();
+      _this.setLatLonViaGeocode();
     };
 
     _this.state = {
@@ -452,14 +479,23 @@ var Controls = function (_React$Component) {
       latLon: [],
       locName: '...',
 
-      categList: {},
+      categList: [],
       selected_day: time.now, //time.getTimeObj(new Date(2017, 8, 7), new Date(2017, 8, 7).getTimezoneOffset() * 60000),//
       selected_categ: [], //["Tech", "Games"],
 
       tracker: {}, // for loaded days
       eventsOnMap: [],
 
-      locInputValue: ''
+      isLoading: false,
+      locErr: false,
+      locErrMessage: '',
+      locInputValue: '',
+
+      toggle: {
+        radius: false,
+        location: false,
+        filter: false
+      }
     };
     return _this;
   }
@@ -467,6 +503,11 @@ var Controls = function (_React$Component) {
   // -- newSearch -- //
 
   // -- newSearch -- //
+
+  // -- setToggle --//
+  // defined in componentDidMount
+
+  // -- setToggle --//
 
   // -- setEventState -- //
 
@@ -502,23 +543,31 @@ var Controls = function (_React$Component) {
 
   // -- componentDidMount -- //
 
+  // -- componentDidMount -- //
 
   _createClass(Controls, [{
     key: 'render',
 
-    // -- componentDidMount -- //
 
     // -- render -- //
     value: function render() {
+      var err = this.state.locErrMessage;
+      var errMsg = err !== '' ? React.createElement(
+        'h4',
+        null,
+        err
+      ) : null;
       return React.createElement(
         'div',
-        null,
+        { id: 'controls' },
         React.createElement(Map, {
           events: this.state.eventsOnMap,
           latLon: this.state.latLon,
           radius: this.state.radius
         }),
         React.createElement(Nav, {
+          toggle: this.setToggle,
+          toggleState: this.state.toggle,
           date: this.state.selected_day,
           eventsFound: this.state.eventsOnMap.length,
           radius_range: this.params.radius_range,
@@ -528,7 +577,25 @@ var Controls = function (_React$Component) {
           loc_inputValue: this.state.locInputValue,
           loc_inputHandleChange: this.handleChange_locValue,
           loc: this.state.locName
-        })
+        }),
+        React.createElement(
+          'div',
+          {
+            className: 'locErrHandler',
+            style: this.state.locErr ? { display: 'inline' } : { display: 'none' }
+          },
+          errMsg,
+          React.createElement(
+            'form',
+            { onSubmit: this.locErr_submitForm },
+            React.createElement('input', {
+              type: 'text',
+              placeholder: 'City or postal code',
+              onChange: this.handleChange_locValue,
+              value: this.state.locInputValue
+            })
+          )
+        )
       );
     }
   }]);
@@ -696,7 +763,7 @@ function Nav(props) {
         id: 'radius-' + x,
         className: props.radius === x ? 'active' : '',
         onClick: function onClick() {
-          nav.closePopups(true);
+          props.toggle('radius');
           props.radius_onClick(x);
         }
       },
@@ -706,7 +773,7 @@ function Nav(props) {
   });
   function handleSubmit(e) {
     e.preventDefault();
-    props.loc_onSubmit(props.loc_inputValue);
+    props.loc_onSubmit();
   }
   return React.createElement(
     'nav',
@@ -715,11 +782,6 @@ function Nav(props) {
       'h1',
       null,
       'Meetup Map Search'
-    ),
-    React.createElement(
-      'p',
-      null,
-      '... events in the next 7 days'
     ),
     React.createElement(
       'div',
@@ -738,7 +800,12 @@ function Nav(props) {
           null,
           React.createElement(
             'span',
-            { className: 'search_radius', id: 'radius' },
+            {
+              className: 'search_radius',
+              onClick: function onClick() {
+                props.toggle('radius');
+              },
+              id: 'radius' },
             props.radius,
             ' miles',
             ' ',
@@ -746,7 +813,11 @@ function Nav(props) {
           ),
           React.createElement(
             'div',
-            { className: 'popup', id: 'radius-popup' },
+            {
+              className: 'popup',
+              id: 'radius-popup',
+              style: props.toggleState.radius ? {} : { display: 'none' }
+            },
             React.createElement(
               'ul',
               null,
@@ -764,13 +835,23 @@ function Nav(props) {
           null,
           React.createElement(
             'span',
-            { className: 'search_location', id: 'location' },
+            {
+              className: 'search_location',
+              id: 'location',
+              onClick: function onClick() {
+                props.toggle('location');
+              }
+            },
             props.loc + ' ',
             React.createElement('i', { className: 'fa fa-map-marker', 'aria-hidden': 'true' })
           ),
           React.createElement(
             'div',
-            { className: 'popup', id: 'location-popup' },
+            {
+              className: 'popup',
+              id: 'location-popup',
+              style: props.toggleState.location ? {} : { display: 'none' }
+            },
             React.createElement(
               'form',
               { id: 'location-search', onSubmit: handleSubmit },
@@ -803,61 +884,34 @@ function Nav(props) {
       ),
       React.createElement(
         'div',
-        { className: 'search_filter-toggle' },
-        React.createElement('i', { className: 'fa fa-sort-desc', 'aria-hidden': 'true' })
+        {
+          className: 'search_filter ' + (props.toggleState.filter ? 'on' : 'off')
+        },
+        React.createElement('div', { className: 'line' }),
+        React.createElement(
+          'div',
+          { className: 'search_filter_categ' },
+          'insert categ here'
+        ),
+        React.createElement(
+          'div',
+          { className: 'search_filter_calendar' },
+          'insert calendar here'
+        )
       ),
       React.createElement(
         'div',
-        { className: 'search_filter' },
-        React.createElement('div', { className: 'search_filter_categ' }),
-        React.createElement('div', { className: 'search_filter_calendar' })
+        {
+          className: 'search_filter-toggle',
+          onClick: function onClick() {
+            props.toggle('filter');
+          }
+        },
+        props.toggleState.filter ? React.createElement('i', { className: 'fa fa-sort-asc', 'aria-hidden': 'true' }) : React.createElement('i', { className: 'fa fa-sort-desc', 'aria-hidden': 'true' })
       )
     )
   );
 }
-
-var nav = {};
-nav['radius'] = false;
-nav['location'] = false;
-
-nav.closePopups = function () {
-  var offAll = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-
-  document.getElementById('radius-popup').style.display = 'none';
-  document.getElementById('location-popup').style.display = 'none';
-  if (offAll) {
-    nav['radius'] = false;
-    nav['location'] = false;
-  }
-};
-
-window.onload = function () {
-  // radius
-  document.getElementById('radius').addEventListener('click', function () {
-    nav.closePopups();
-    if (!nav['radius']) {
-      nav['radius'] = true;
-      nav['location'] = false;
-      document.getElementById('radius-popup').style.display = 'block';
-    } else {
-      nav['radius'] = false;
-      nav['location'] = false;
-    }
-  });
-  // location
-  document.getElementById('location').addEventListener('click', function () {
-    nav.closePopups();
-    if (!nav['location']) {
-      nav['location'] = true;
-      nav['radius'] = false;
-      document.getElementById('location-popup').style.display = 'block';
-      document.getElementById('location-input').focus();
-    } else {
-      nav['radius'] = false;
-      nav['location'] = false;
-    }
-  });
-};
 
 (function () {
   ReactDOM.render(React.createElement(Controls, null), document.getElementById('controls'));

@@ -41,7 +41,7 @@ async.limiter = (meta) =>
 			resolve();
 		}
 	});
-}
+};
 // -- limiter -- //
 
 // -- geoLocate -- //
@@ -49,13 +49,7 @@ async.geoLocate = () =>
 {
 	return new Promise((resolve, reject) =>
 	{
-		// console.log('loc preset to [41.957819, -87.994403], fix it!');
-		// resolve([41.957819, -87.994403]); // temp
-		const options =
-		{
-			enableHighAccuracy: true,
-			maximumAge: Infinity
-		}
+		const options = {maximumAge: Infinity}
 		const success = (pos) =>
 		{
 			let crd = pos.coords;
@@ -63,12 +57,11 @@ async.geoLocate = () =>
 		}
 		const error = (err) =>
 		{
-			console.log(err, 'put in custom location');
-			// resolve([41.957819, -87.994403]);
+			resolve(false)
 		}
 		navigator.geolocation.getCurrentPosition(success, error, options);
 	});
-}
+};
 // -- geoLocate -- //
 
 // -- findEvents -- //
@@ -121,7 +114,7 @@ async.findEvents = (url, allEvents) =>
 
 		async.ajaxCall(url).then( x => resolve(parseData(x)) );
 	});
-}
+};
 // -- findEvents -- //
 
 // -- getCategories -- //
@@ -135,11 +128,12 @@ async.getCategories = (url) =>
 			{
 				arr.push(x.name);
 			});
+			console.log('getCategories', arr);
 			return arr;
 		}
 		async.ajaxCall(url).then( x => resolve(parseData(x)) );
 	});
-}
+};
 // -- getCategories -- //
 
 // -- reverseGeo -- //
@@ -154,7 +148,7 @@ async.reverseGeo = (loc) =>
 				resolve(`${city}, ${state}`);
 			});
 	});
-}
+};
 // -- reverseGeo -- //
 
 // -- geocode -- //
@@ -164,8 +158,15 @@ async.geocode = (locStr) =>
 		async.ajaxCall(`https://geocode.xyz/${locStr}?geoit=json`)
 			.then(x =>
 				{
-					console.log('test', x);
-					resolve([x.latt, x.longt])
-				})
+					console.log('geocode', x);
+					if(x.error)
+					{
+						console.log('x.error', x);
+						console.log('geocode error handeled'); // TEMP
+						resolve([false, 'Location Not Found, Please Try Again']);
+						return;
+					}
+					resolve([true, [x.latt, x.longt]])
+				});
 	});
-}
+};

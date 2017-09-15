@@ -9,14 +9,24 @@ class Controls extends React.Component
       latLon: [],
       locName: '...',
 
-      categList: {},
+      categList: [],
       selected_day: time.now, //time.getTimeObj(new Date(2017, 8, 7), new Date(2017, 8, 7).getTimezoneOffset() * 60000),//
       selected_categ: [],//["Tech", "Games"],
 
       tracker: {}, // for loaded days
       eventsOnMap: [],
 
-      locInputValue: ''
+      isLoading: false,
+      locErr: false,
+      locErrMessage: '',
+      locInputValue: '',
+
+      toggle:
+      {
+        radius: false,
+        location: false,
+        filter: false,
+      }
     };
   };
 
@@ -49,13 +59,35 @@ class Controls extends React.Component
   // -- newSearch -- //
   newSearch = (loc, radius, limit = this.params.timeLimit) =>
   {
+    this.setToggle('all');
+    if(!loc){ this.setState({locErr: true}); return; }
+
     this.params.timeLimit = limit;
     this.params.events = time.createCalendarObj(limit);
     this.todayIsLoaded = false;
-    this.setState({tracker: time.createCalendarObj(limit, true)});
+    this.setLocName(loc)
+    this.setState(
+      {
+        tracker: time.createCalendarObj(limit, true),
+        latLon: loc,
+        locErr: false,
+        locInputValue: '',
+      }
+    );
     this.eventsFindLoop(loc, radius, limit);
   };
   // -- newSearch -- //
+
+  // -- setToggle --//
+  popupClosedState; // defined in componentDidMount
+  setToggle = (target) =>
+  {
+    if (target === 'all') {this.setState({toggle: this.popupClosedState});}
+    let tempObj = task.clone(this.popupClosedState);
+    tempObj[target] = !this.state.toggle[target];
+    this.setState({toggle: tempObj});
+  }
+  // -- setToggle --//
 
   // -- setEventState -- //
   setEventState = (data) =>
@@ -88,13 +120,15 @@ class Controls extends React.Component
   // -- geocodeLatLon -- //
   setLatLonViaGeocode = (locStr = this.state.locInputValue) =>
   {
-    console.log(locStr);
     async.geocode(locStr)
       .then(x =>
       {
-        this.setLocName(x)
-        this.setState({latLon: x})
-        this.newSearch(x, this.state.radius);
+        if (!x[0])
+        {
+          this.setState({locErrMessage: x[1], locErr: true});
+          return;
+        }
+        this.newSearch(x[1], this.state.radius);
       });
   };
   // -- geocodeLatLon -- //
@@ -177,32 +211,42 @@ class Controls extends React.Component
   // -- componentDidMount -- //
   componentDidMount = () =>
   {
+    this.popupClosedState = task.clone(this.state.toggle);
     async.getCategories(this.api.getCategoriesUrl())
       .then(x =>
       {
         this.setState({categList: x})
+        console.log('got list, now geoLocate');
         return async.geoLocate();
       })
       .then(x =>
       {
-        this.setState({latLon: x});
-        this.setLocName(x);
-        return this.newSearch(x, this.state.radius);
+          return this.newSearch(x, this.state.radius);
       });
   };
   // -- componentDidMount -- //
 
+  locErr_submitForm = (e) =>
+  {
+    e.preventDefault();
+    this.setLatLonViaGeocode();
+  }
+
   // -- render -- //
   render()
   {
+    let err = this.state.locErrMessage;
+    let errMsg = err !== '' ? <h4>{err}</h4> : null;
     return(
-      <div>
+      <div id='controls'>
         <Map
           events={this.state.eventsOnMap}
           latLon={this.state.latLon}
           radius={this.state.radius}
         />
         <Nav
+          toggle={this.setToggle}
+          toggleState={this.state.toggle}
           date={this.state.selected_day}
           eventsFound={this.state.eventsOnMap.length}
           radius_range={this.params.radius_range}
@@ -213,6 +257,21 @@ class Controls extends React.Component
           loc_inputHandleChange={this.handleChange_locValue}
           loc={this.state.locName}
         />
+        <div
+          className='locErrHandler'
+          style={this.state.locErr ? {display: 'inline'}: {display: 'none'}}
+        >
+          {errMsg}
+          <form onSubmit={this.locErr_submitForm}>
+            <input
+              type='text'
+              placeholder='City or postal code'
+              onChange={this.handleChange_locValue}
+              value={this.state.locInputValue}
+            />
+        </form>
+        </div>
+
       </div>
     );
   };

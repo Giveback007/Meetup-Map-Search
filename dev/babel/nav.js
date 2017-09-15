@@ -10,7 +10,7 @@ function Nav(props)
         onClick={
           () =>
           {
-            nav.closePopups(true);
+            props.toggle('radius');
             props.radius_onClick(x);
           }
         }
@@ -20,12 +20,12 @@ function Nav(props)
   function handleSubmit(e)
   {
     e.preventDefault();
-    props.loc_onSubmit(props.loc_inputValue);
+    props.loc_onSubmit();
   }
   return(
     <nav className='nav'>
       <h1>Meetup Map Search</h1>
-      <p>... events in the next 7 days</p>
+      {/* <p>... events in the next 7 days</p> */}
       <div className='search'>
 
         <div className='search_selector'>
@@ -34,21 +34,36 @@ function Nav(props)
           </div>
 
           <div>
-            <span className='search_radius' id='radius'>
+            <span
+              className='search_radius'
+              onClick={() => {props.toggle('radius')}}
+              id='radius'>
               {props.radius} miles
               {' '}<i className="fa fa-map-o" aria-hidden="true"></i>
             </span>
-            <div className='popup' id='radius-popup'>
+            <div
+              className='popup'
+              id='radius-popup'
+              style={props.toggleState.radius ? {} : {display: 'none'}}
+            >
               <ul>{radius_range}</ul>
             </div>
           </div>
           <div>of</div>
           <div>
-            <span className='search_location' id='location'>
+            <span
+              className='search_location'
+              id='location'
+              onClick={() => {props.toggle('location')}}
+            >
               {props.loc + ' '}
               <i className="fa fa-map-marker" aria-hidden="true"></i>
             </span>
-            <div className='popup' id='location-popup'>
+            <div
+              className='popup'
+              id='location-popup'
+              style={props.toggleState.location ? {} : {display: 'none'}}
+            >
               <form id='location-search' onSubmit={handleSubmit}>
                 <input
                   id='location-input'
@@ -59,7 +74,7 @@ function Nav(props)
                   placeholder='City or postal code'
                 />
                 {/* <input type='submit' style={{display: 'none'}}/> */}
-            </form>
+              </form>
             </div>
           </div>
           <div>on</div>
@@ -72,78 +87,33 @@ function Nav(props)
         </div>
 
         {/*  */}
-        <div className='search_filter-toggle'>
-          {/* <div>Filter</div> */}
-          {/* <i className="fa fa-sort-asc" aria-hidden="true"></i> */}
-          <i className="fa fa-sort-desc" aria-hidden="true"></i>
-        </div>
+        <div
+          className={`search_filter ${props.toggleState.filter ? 'on' : 'off'}`}
+        >
+          <div className='line'/>
+          <div className='search_filter_categ'>insert categ here</div>
+          <div className='search_filter_calendar'>insert calendar here</div>
 
-        <div className='search_filter'>
-          <div className='search_filter_categ'></div>
-          <div className='search_filter_calendar'></div>
+        </div>
+        <div
+          className='search_filter-toggle'
+          onClick={() => {props.toggle('filter')}}
+        >
+          {/* <div>Filter</div> */}
+          {props.toggleState.filter ?
+            <i className="fa fa-sort-asc" aria-hidden="true"></i> :
+            <i className="fa fa-sort-desc" aria-hidden="true"></i>
+          }
         </div>
         {/*  */}
 
+        {/* onClick={() => {props.toggle('location')}} */}
+        {/* style={props.toggleState.location ? {} : {display: 'none'}} */}
+
     </div>
 
-      {/* <div className='search_filter-drop search_child'>
-        <i className="fa fa-sort-desc" aria-hidden="true"></i>
-        <i className="fa fa-sort-asc" aria-hidden="true"></i>
-      </div> */}
 
     </nav>
 
   );
-}
-
-const nav = {};
-nav['radius'] = false;
-nav['location'] = false;
-
-nav.closePopups = (offAll = false) =>
-{
-  document.getElementById('radius-popup').style.display = 'none';
-  document.getElementById('location-popup').style.display = 'none';
-  if (offAll)
-  {
-    nav['radius'] = false;
-    nav['location'] = false;
-  }
-}
-
-window.onload = () => {
-// radius
-document.getElementById('radius').addEventListener('click', function()
-{
-  nav.closePopups();
-  if (!nav['radius'])
-  {
-    nav['radius'] = true;
-    nav['location'] = false;
-    document.getElementById('radius-popup').style.display = 'block';
-  }
-  else
-  {
-    nav['radius'] = false;
-    nav['location'] = false;
-  }
-});
-// location
-document.getElementById('location').addEventListener('click', function()
-{
-  nav.closePopups();
-  if (!nav['location'])
-  {
-    nav['location'] = true;
-    nav['radius'] = false;
-    document.getElementById('location-popup').style.display = 'block';
-    document.getElementById('location-input').focus();
-  }
-  else
-  {
-    nav['radius'] = false;
-    nav['location'] = false;
-  }
-});
-
 }
