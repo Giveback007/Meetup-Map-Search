@@ -99,14 +99,14 @@ a {
     position: relative;
     margin: 5px; }
 
-.search_radius, .search_location, .search_calendar {
+.search_radius, .search_location, .search_date {
   cursor: pointer;
   -webkit-transition: all 0.5s ease;
   -o-transition: all 0.5s ease;
   transition: all 0.5s ease;
   padding: 5px 0;
   border-bottom: 1px solid #a6a6a6; }
-  .search_radius:hover, .search_location:hover, .search_calendar:hover {
+  .search_radius:hover, .search_location:hover, .search_date:hover {
     border-bottom: 1px solid white; }
 
 #radius-popup {
@@ -228,6 +228,28 @@ a {
       color: white; }
     .search_filter_categ span.off {
       color: #a6a6a6; }
+
+.search_filter_week {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  margin: 0 15px; }
+  .search_filter_week > div {
+    margin: 0 5px;
+    border: solid 1px;
+    -webkit-box-flex: 1;
+    -webkit-flex: 1;
+    -ms-flex: 1;
+    flex: 1; }
+    .search_filter_week > div:hover {
+      cursor: pointer; }
+    .search_filter_week > div.inactive {
+      color: #a6a6a6; }
+  .search_filter_week .arrows {
+    border: none; }
+    .search_filter_week .arrows:hover {
+      cursor: pointer; }
 
 #controls {
   height: 140px; }

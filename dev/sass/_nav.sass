@@ -31,7 +31,7 @@
     position: relative
     margin: 5px
 
-.search_radius, .search_location, .search_calendar
+.search_radius, .search_location, .search_date
   cursor: pointer
   transition: all 0.5s ease
   padding: 5px 0
@@ -78,9 +78,6 @@
     &:focus
       transition: all 1s ease
       border: 1px solid rgb(31, 36, 204)
-
-// #calendar-popup
-//   put in css for calendar
 
 .popup
   z-index: 1000
@@ -143,3 +140,19 @@
       color: $hoverState2
     &.off
       color: $hoverState1
+
+.search_filter_week
+  display: flex
+  margin: 0 15px
+  > div
+    margin: 0 5px
+    border: solid 1px
+    flex: 1
+    &:hover
+      cursor: pointer
+    &.inactive
+      color: $hoverState1
+  .arrows
+    border: none
+    &:hover
+      cursor: pointer

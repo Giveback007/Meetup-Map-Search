@@ -323,7 +323,7 @@ var Controls = function (_React$Component) {
     _this.params = {
       events: {},
       meta: {},
-      timeLimit: time.getDayLimit(0),
+      timeLimit: time.getWeekLimit(0),
       radius_range: [5, 10, 25, 35, 50, 100]
     };
     _this.api = {
@@ -506,6 +506,8 @@ var Controls = function (_React$Component) {
       locErrMessage: '',
       locInputValue: '',
 
+      week: [{}, {}, {}, {}, {}, {}, {}],
+
       toggle: {
         radius: false,
         location: false,
@@ -591,7 +593,8 @@ var Controls = function (_React$Component) {
           categ_onClick: this.setCateg,
           toggle: this.setToggle,
           toggle_stateOf: this.state.toggle,
-          date: this.state.selected_day,
+          calendar_date: this.state.selected_day,
+          calendar_week: this.state.week,
           eventsFound: this.state.eventsOnMap.length,
           radius_range: this.params.radius_range,
           radius_onClick: this.setRadius,
@@ -778,8 +781,15 @@ var Map = function (_React$Component2) {
 }(React.Component);
 
 function Nav(props) {
-  var date = time.daysOfWeek[props.date.weekDay] + ', ' + time.months[props.date.month] + ' ' + props.date.day;
-
+  var t = props.calendar_date;
+  var date = time.daysOfWeek[t.weekDay] + ', ' + time.months[t.month] + ' ' + t.day;
+  var week = props.calendar_week.map(function (x, i) {
+    return React.createElement(
+      'div',
+      null,
+      time.daysOfWeek[i]
+    );
+  });
   var radius_range = props.radius_range.map(function (x) {
     return React.createElement(
       'li',
@@ -915,7 +925,12 @@ function Nav(props) {
           null,
           React.createElement(
             'span',
-            { className: 'search_calendar', id: 'calendar' },
+            {
+              className: 'search_date',
+              onClick: function onClick() {
+                props.toggle('filter');
+              },
+              id: 'date' },
             date + ' ',
             React.createElement('i', { className: 'fa fa-calendar', 'aria-hidden': 'true' })
           )
@@ -927,7 +942,30 @@ function Nav(props) {
           className: 'search_filter ' + (props.toggle_stateOf.filter ? 'on' : 'off')
         },
         React.createElement('div', { className: 'line' }),
-        React.createElement('div', { className: 'search_filter_calendar' }),
+        React.createElement(
+          'h3',
+          null,
+          'Calendar'
+        ),
+        React.createElement(
+          'div',
+          { className: 'search_filter_week' },
+          week,
+          React.createElement(
+            'span',
+            { className: 'arrows' },
+            React.createElement(
+              'div',
+              null,
+              React.createElement('i', { className: 'fa fa-arrow-up', 'aria-hidden': 'true' })
+            ),
+            React.createElement(
+              'div',
+              null,
+              React.createElement('i', { className: 'fa fa-arrow-down', 'aria-hidden': 'true' })
+            )
+          )
+        ),
         React.createElement(
           'h3',
           null,

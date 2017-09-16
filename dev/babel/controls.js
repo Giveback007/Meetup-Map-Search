@@ -21,6 +21,8 @@ class Controls extends React.Component
       locErrMessage: '',
       locInputValue: '',
 
+      week: [{}, {}, {}, {}, {}, {}, {}],
+
       toggle:
       {
         radius: false,
@@ -34,7 +36,7 @@ class Controls extends React.Component
   {
     events: {},
     meta: {},
-    timeLimit: time.getDayLimit(0),
+    timeLimit: time.getWeekLimit(0),
     radius_range: [5, 10, 25, 35, 50, 100]
   };
 
@@ -265,7 +267,8 @@ class Controls extends React.Component
           categ_onClick={this.setCateg}
           toggle={this.setToggle}
           toggle_stateOf={this.state.toggle}
-          date={this.state.selected_day}
+          calendar_date={this.state.selected_day}
+          calendar_week={this.state.week}
           eventsFound={this.state.eventsOnMap.length}
           radius_range={this.params.radius_range}
           radius_onClick={this.setRadius}

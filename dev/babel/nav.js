@@ -1,7 +1,11 @@
 function Nav(props)
 {
-  let date = `${time.daysOfWeek[props.date.weekDay]}, ${time.months[props.date.month]} ${props.date.day}`;
-
+  let t = props.calendar_date;
+  let date = `${time.daysOfWeek[t.weekDay]}, ${time.months[t.month]} ${t.day}`;
+  let week = props.calendar_week.map((x, i) =>
+  {
+    return <div>{time.daysOfWeek[i]}</div>
+  });
   let radius_range = props.radius_range.map(x =>
   {
     return(
@@ -88,13 +92,15 @@ function Nav(props)
                   value={props.loc_inputValue}
                   placeholder='City or postal code'
                 />
-                {/* <input type='submit' style={{display: 'none'}}/> */}
               </form>
             </div>
           </div>
           <div>on</div>
           <div>
-            <span className='search_calendar' id='calendar'>
+            <span
+              className='search_date'
+              onClick={() => {props.toggle('filter')}}
+              id='date'>
               {date + ' '}
               <i className="fa fa-calendar" aria-hidden="true"></i>
             </span>
@@ -107,8 +113,14 @@ function Nav(props)
         >
 
           <div className='line'/>
-
-          <div className='search_filter_calendar'>{/*/insert calendar here/*/}</div>
+          <h3>Calendar</h3>
+          <div className='search_filter_week'>
+            {week}
+            <span className='arrows'>
+              <div><i className="fa fa-arrow-up" aria-hidden="true"></i></div>
+              <div><i className="fa fa-arrow-down" aria-hidden="true"></i></div>
+            </span>
+          </div>
 
           <h3>Categories</h3>
           <div className='search_filter_categ'>{categList}</div>
@@ -129,8 +141,8 @@ function Nav(props)
         {/* onClick={() => {props.toggle('location')}} */}
         {/* style={props.toggle_stateOf.location ? {} : {display: 'none'}} */}
 
-    </div>
+      </div>
 
-  </nav>
+    </nav>
   );
 }
