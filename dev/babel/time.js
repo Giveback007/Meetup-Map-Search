@@ -18,16 +18,27 @@ time.getKey = (y, m, d) =>
 
 time.getTimeObj = (unix, offset) =>
 {
-	const getTimeString = (t) =>
-	{
+const getTimeString = (t, shortForm = false) =>
+{
 		let hour = ((t.hour + 11) % 12 + 1);
 		let amPm = t.hour < 12 ? 'am' : 'pm';
 		let min = t.min < 10 ? '0' + t.min : t.min;
-		return(
-			`${time.daysOfWeek[t.weekDay]},` +
-			` ${time.months[t.month]}` +
-			` ${t.day}, ${hour}:${min} ${amPm}`
-		);
+		if (!shortForm)
+		{
+			return(
+				`${time.daysOfWeek[t.weekDay]},` +
+				` ${time.months[t.month]}` +
+				` ${t.day}, ${hour}:${min} ${amPm}`
+			);
+		}
+		else
+		{
+			return(
+				`${time.daysOfWeek[t.weekDay]},` +
+				` ${time.months[t.month]}` +
+				` ${t.day}`
+			)
+		}
 	}
 
 	let date = new Date(unix - offset);
@@ -44,6 +55,7 @@ time.getTimeObj = (unix, offset) =>
 		weekDay: date.getUTCDay(),
 	}
 	obj.timeString = getTimeString(obj);
+	obj.timeStringShort = getTimeString(obj, true)
 	obj.key = time.getKey(obj.year, obj.month, obj.day);
 
 	return obj;
@@ -83,6 +95,30 @@ time.getMonthLimit = (monthsFromNow) =>
 
 	return time.getTimeObj(end, offset);
 }
+
+time.createWeekObj = (weeksFromNow) =>
+{
+	let weekObj = [];
+	let day = time.getDayLimit(0);
+	let week = time.getWeekLimit(weeksFromNow);
+	let t = (week.unix - day.unix) / 1000 / 60 / 60 / 24;
+	while (weekObj.length < 7)
+	{
+		let tempTime = time.getDayLimit(t);
+		let tempObj =
+		{
+			key: tempTime.key,
+			unix: tempTime.unix,
+			timeStringShort: tempTime.timeStringShort,
+			year: tempTime.year,
+		}
+		if (t < 0) {tempObj.inactive = true}
+		weekObj.unshift(tempObj);
+		t--;
+	}
+	return weekObj;
+}
+
 
 time.createCalendarObj = (limit, tracker = false) =>
 {

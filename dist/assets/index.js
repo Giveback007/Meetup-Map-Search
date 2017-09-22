@@ -57,10 +57,16 @@ time.getKey = function (y, m, d) {
 
 time.getTimeObj = function (unix, offset) {
   var getTimeString = function getTimeString(t) {
+    var shortForm = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
     var hour = (t.hour + 11) % 12 + 1;
     var amPm = t.hour < 12 ? 'am' : 'pm';
     var min = t.min < 10 ? '0' + t.min : t.min;
-    return time.daysOfWeek[t.weekDay] + ',' + (' ' + time.months[t.month]) + (' ' + t.day + ', ' + hour + ':' + min + ' ' + amPm);
+    if (!shortForm) {
+      return time.daysOfWeek[t.weekDay] + ',' + (' ' + time.months[t.month]) + (' ' + t.day + ', ' + hour + ':' + min + ' ' + amPm);
+    } else {
+      return time.daysOfWeek[t.weekDay] + ',' + (' ' + time.months[t.month]) + (' ' + t.day);
+    }
   };
 
   var date = new Date(unix - offset);
@@ -76,6 +82,7 @@ time.getTimeObj = function (unix, offset) {
     weekDay: date.getUTCDay()
   };
   obj.timeString = getTimeString(obj);
+  obj.timeStringShort = getTimeString(obj, true);
   obj.key = time.getKey(obj.year, obj.month, obj.day);
 
   return obj;
@@ -109,6 +116,28 @@ time.getMonthLimit = function (monthsFromNow) {
   var offset = new Date(end).getTimezoneOffset() * 60000;
 
   return time.getTimeObj(end, offset);
+};
+
+time.createWeekObj = function (weeksFromNow) {
+  var weekObj = [];
+  var day = time.getDayLimit(0);
+  var week = time.getWeekLimit(weeksFromNow);
+  var t = (week.unix - day.unix) / 1000 / 60 / 60 / 24;
+  while (weekObj.length < 7) {
+    var tempTime = time.getDayLimit(t);
+    var tempObj = {
+      key: tempTime.key,
+      unix: tempTime.unix,
+      timeStringShort: tempTime.timeStringShort,
+      year: tempTime.year
+    };
+    if (t < 0) {
+      tempObj.inactive = true;
+    }
+    weekObj.unshift(tempObj);
+    t--;
+  }
+  return weekObj;
 };
 
 time.createCalendarObj = function (limit) {
@@ -274,7 +303,6 @@ async.getCategories = function (url) {
       data.results.map(function (x) {
         arr.push(x.name);
       });
-      console.log('getCategories', arr);
       return arr;
     }
     async.ajaxCall(url).then(function (x) {
@@ -352,6 +380,7 @@ var Controls = function (_React$Component) {
       _this.params.events = time.createCalendarObj(limit);
       _this.todayIsLoaded = false;
       _this.setLocName(loc);
+      _this.setWeek(-1, true);
       _this.setState({
         tracker: time.createCalendarObj(limit, true),
         latLon: loc,
@@ -359,6 +388,34 @@ var Controls = function (_React$Component) {
         locInputValue: ''
       });
       _this.eventsFindLoop(loc, radius, limit);
+    };
+
+    _this.updateDateTracker = function (tracker, limit) {
+      var loaded = task.clone(tracker);
+
+      var y = limit.year,
+          m = limit.month,
+          d = limit.day;
+      var stop = false;
+      while (!stop) {
+        d--;
+        if (d < 1) {
+          m--;d = 31;
+        }
+        if (m < 0) {
+          y--;m = 11;
+        }
+        var key = time.getKey(y, m, d);
+        if (tracker[key[0]] !== undefined) {
+          if (loaded[key[0]][key[1]] !== undefined) {
+            loaded[key[0]][key[1]] = true;
+          }
+        } else {
+          stop = true;
+        }
+      }
+
+      return loaded;
     };
 
     _this.setToggle = function (target) {
@@ -382,7 +439,27 @@ var Controls = function (_React$Component) {
         });
       }
       _this.setState({ selected_categ: tempArr });
-      _this.filterEvents(tempArr);
+      _this.setWeek(0, false, tempArr);
+      _this.setEventsOnMap(tempArr);
+    };
+
+    _this.setWeek = function () {
+      var adj = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+      var reset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      var categ = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _this.state.selected_categ;
+
+      var w = _this.state.selected_week + adj;
+      if (reset) {
+        w = 0;
+      }
+      if (w < 0) {
+        return;
+      }
+      var tempArr = time.createWeekObj(w);
+      tempArr.map(function (x, i) {
+        tempArr[i].length = _this.filterEvents(categ, x.key).length;
+      });
+      _this.setState({ selected_week: w, week: tempArr });
     };
 
     _this.setEventState = function (data) {
@@ -421,19 +498,29 @@ var Controls = function (_React$Component) {
 
     _this.filterEvents = function () {
       var categ = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this.state.selected_categ;
+      var key = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _this.state.selected_day.key;
 
-      var day = _this.state.selected_day.key;
-      var events = _this.params.events[day[0]][day[1]];
+      var events = _this.params.events[key[0]][key[1]];
       var filtered = void 0;
       if (!categ.length) {
         filtered = events;
+      } else if (!events) {
+        events = [];
       } else {
         filtered = events.filter(function (x) {
           return categ.indexOf(x.category) !== -1;
         });
       }
+      if (filtered === undefined) {
+        filtered = [];
+      }
+      return filtered;
+    };
 
-      _this.setState({ eventsOnMap: filtered });
+    _this.setEventsOnMap = function () {
+      var categ = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this.state.selected_categ;
+
+      _this.setState({ eventsOnMap: _this.filterEvents(categ) });
     };
 
     _this.todayIsLoaded = false;
@@ -444,7 +531,7 @@ var Controls = function (_React$Component) {
       var key = _this.state.selected_day.key;
       if (!_this.todayIsLoaded || forceLoad) if (_this.state.tracker[key[0]][key[1]] || forceLoad) {
         _this.todayIsLoaded = true;
-        _this.filterEvents();
+        _this.setEventsOnMap();
       }
     };
 
@@ -501,11 +588,11 @@ var Controls = function (_React$Component) {
       tracker: {}, // for loaded days
       eventsOnMap: [],
 
-      isLoading: false,
       locErr: false,
       locErrMessage: '',
       locInputValue: '',
 
+      selected_week: 0,
       week: [{}, {}, {}, {}, {}, {}, {}],
 
       toggle: {
@@ -521,6 +608,10 @@ var Controls = function (_React$Component) {
 
   // -- newSearch -- //
 
+  // -- setTracker -- //
+
+  // -- setTracker -- //
+
   // -- setToggle --//
   // defined in componentDidMount
 
@@ -530,6 +621,9 @@ var Controls = function (_React$Component) {
 
   // -- setCateg -- //
 
+  // -- setWeek -- //
+
+  // -- setWeek -- //
 
   // -- setEventState -- //
 
@@ -554,6 +648,10 @@ var Controls = function (_React$Component) {
   // -- filterEvents -- //
 
   // -- filterEvents -- //
+
+  // -- setEventsOnMap -- //
+
+  // -- setEventsOnMap -- //
 
   // -- loadToday -- //
 
@@ -593,8 +691,11 @@ var Controls = function (_React$Component) {
           categ_onClick: this.setCateg,
           toggle: this.setToggle,
           toggle_stateOf: this.state.toggle,
-          calendar_date: this.state.selected_day,
-          calendar_week: this.state.week,
+          date: this.state.selected_day,
+          week: this.state.week,
+          week_set: this.setWeek,
+          week_selected: this.state.selected_week,
+          loadStatus: this.state.tracker,
           eventsFound: this.state.eventsOnMap.length,
           radius_range: this.params.radius_range,
           radius_onClick: this.setRadius,
@@ -781,15 +882,71 @@ var Map = function (_React$Component2) {
 }(React.Component);
 
 function Nav(props) {
-  var t = props.calendar_date;
-  var date = time.daysOfWeek[t.weekDay] + ', ' + time.months[t.month] + ' ' + t.day;
-  var week = props.calendar_week.map(function (x, i) {
+  var date = props.date.timeStringShort;
+
+  var week = props.week.map(function (x, i) {
+    if (x.inactive) {
+      return React.createElement(
+        'div',
+        { className: 'inactive' },
+        x.timeStringShort
+      );
+    }
     return React.createElement(
       'div',
       null,
-      time.daysOfWeek[i]
+      x.timeStringShort,
+      React.createElement('br', null),
+
+      //TODO insert length
+      x.key && props.loadStatus[x.key[0]] && props.loadStatus[x.key[0]][x.key[1]] ? x.length : React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-3x fa-fw' })
     );
   });
+
+  var weekTitle = function weekTitle(w) {
+    var x = void 0;
+    if (w === 0) {
+      x = 'This Week';
+    } else if (w === 1) {
+      x = 'Next Week';
+    } else {
+      var t = props.week[0];
+      x = 'Week of ' + t.timeStringShort.slice(5) + ', ' + t.year;
+      // TODO month, day Year
+    }
+    return x;
+  };
+
+  var weekFilter = React.createElement(
+    'div',
+    { className: 'search_filter_week' },
+    React.createElement(
+      'h3',
+      null,
+      React.createElement('i', {
+        onClick: function onClick() {
+          return props.week_set(-1);
+        },
+        className: 'fa fa-arrow-left arrow',
+        'aria-hidden': 'true',
+        style: props.week_selected ? {} : { color: 'hsl(0, 0%, 65%)', cursor: 'inherit' }
+      }),
+      ' ' + weekTitle(props.week_selected) + ' ',
+      React.createElement('i', {
+        onClick: function onClick() {
+          return props.week_set(+1);
+        },
+        className: 'fa fa-arrow-right arrow',
+        'aria-hidden': 'true'
+      })
+    ),
+    React.createElement(
+      'div',
+      { className: 'week_main' },
+      week
+    )
+  );
+
   var radius_range = props.radius_range.map(function (x) {
     return React.createElement(
       'li',
@@ -942,30 +1099,7 @@ function Nav(props) {
           className: 'search_filter ' + (props.toggle_stateOf.filter ? 'on' : 'off')
         },
         React.createElement('div', { className: 'line' }),
-        React.createElement(
-          'h3',
-          null,
-          'Calendar'
-        ),
-        React.createElement(
-          'div',
-          { className: 'search_filter_week' },
-          week,
-          React.createElement(
-            'span',
-            { className: 'arrows' },
-            React.createElement(
-              'div',
-              null,
-              React.createElement('i', { className: 'fa fa-arrow-up', 'aria-hidden': 'true' })
-            ),
-            React.createElement(
-              'div',
-              null,
-              React.createElement('i', { className: 'fa fa-arrow-down', 'aria-hidden': 'true' })
-            )
-          )
-        ),
+        weekFilter,
         React.createElement(
           'h3',
           null,

@@ -1,11 +1,73 @@
 function Nav(props)
 {
-  let t = props.calendar_date;
-  let date = `${time.daysOfWeek[t.weekDay]}, ${time.months[t.month]} ${t.day}`;
-  let week = props.calendar_week.map((x, i) =>
+  let date = props.date.timeStringShort;
+
+  let week = props.week.map((x, i) =>
   {
-    return <div>{time.daysOfWeek[i]}</div>
+    if (x.inactive)
+    {
+      return(
+        <div className='inactive'>
+          {x.timeStringShort}
+        </div>
+      )
+    }
+    return(
+      <div>
+        {x.timeStringShort}
+        {/* {console.log('length', x.length)} */}
+        <br/>
+        {
+          //TODO insert length
+          x.key && props.loadStatus[x.key[0]] && props.loadStatus[x.key[0]][x.key[1]] ?
+            x.length :
+            <i className="fa fa-spinner fa-pulse fa-3x fa-fw"></i>
+        }
+
+      </div>
+    );
+
   });
+
+  const weekTitle = (w) =>
+  {
+    let x;
+    if (w === 0) {x = 'This Week'}
+    else if (w === 1) {x = 'Next Week'}
+    else
+    {
+      let t = props.week[0];
+      x = `Week of ${t.timeStringShort.slice(5)}, ${t.year}`
+      // TODO month, day Year
+    }
+    return x;
+  }
+
+  let weekFilter =
+  (
+    <div className='search_filter_week'>
+      <h3>
+        <i
+          onClick={() => props.week_set(-1)}
+          className="fa fa-arrow-left arrow"
+          aria-hidden="true"
+          style={props.week_selected ?
+            {} :
+            {color: 'hsl(0, 0%, 65%)', cursor: 'inherit'}}
+        ></i>
+        {' ' + weekTitle(props.week_selected) + ' '}
+        <i
+          onClick={() => props.week_set(+1)}
+          className="fa fa-arrow-right arrow"
+          aria-hidden="true"
+        ></i>
+      </h3>
+      <div className='week_main'>
+        {week}
+      </div>
+    </div>
+  );
+
   let radius_range = props.radius_range.map(x =>
   {
     return(
@@ -113,14 +175,7 @@ function Nav(props)
         >
 
           <div className='line'/>
-          <h3>Calendar</h3>
-          <div className='search_filter_week'>
-            {week}
-            <span className='arrows'>
-              <div><i className="fa fa-arrow-up" aria-hidden="true"></i></div>
-              <div><i className="fa fa-arrow-down" aria-hidden="true"></i></div>
-            </span>
-          </div>
+          {weekFilter}
 
           <h3>Categories</h3>
           <div className='search_filter_categ'>{categList}</div>

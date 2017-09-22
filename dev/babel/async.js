@@ -128,7 +128,6 @@ async.getCategories = (url) =>
 			{
 				arr.push(x.name);
 			});
-			console.log('getCategories', arr);
 			return arr;
 		}
 		async.ajaxCall(url).then( x => resolve(parseData(x)) );

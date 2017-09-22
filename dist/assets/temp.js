@@ -299,6 +299,7 @@ async.getCategories = (url) =>
 			{
 				arr.push(x.name);
 			});
+			console.log('getCategories', arr);
 			return arr;
 		}
 		async.ajaxCall(url).then( x => resolve(parseData(x)) );
@@ -352,7 +353,7 @@ class Controls extends React.Component
       latLon: [],
       locName: '...',
 
-      categList: {},
+      categList: [],
       selected_day: time.now, //time.getTimeObj(new Date(2017, 8, 7), new Date(2017, 8, 7).getTimezoneOffset() * 60000),//
       selected_categ: [],//["Tech", "Games"],
 
@@ -363,6 +364,9 @@ class Controls extends React.Component
       locErr: false,
       locErrMessage: '',
       locInputValue: '',
+
+      selected_week: 0,
+      week: [{}, {}, {}, {}, {}, {}, {}],
 
       toggle:
       {
@@ -377,7 +381,7 @@ class Controls extends React.Component
   {
     events: {},
     meta: {},
-    timeLimit: time.getDayLimit(0),
+    timeLimit: time.getWeekLimit(0),
     radius_range: [5, 10, 25, 35, 50, 100]
   };
 
@@ -402,9 +406,8 @@ class Controls extends React.Component
   // -- newSearch -- //
   newSearch = (loc, radius, limit = this.params.timeLimit) =>
   {
-    nav.closePopups(true); // TODO replace and remove
-
-    if(!loc){ return }
+    this.setToggle('all');
+    if(!loc){ this.setState({locErr: true}); return; }
 
     this.params.timeLimit = limit;
     this.params.events = time.createCalendarObj(limit);
@@ -422,24 +425,48 @@ class Controls extends React.Component
   };
   // -- newSearch -- //
 
-  // -- closeAllPopups -- //
-  // closeAllPopups = () =>
-  // {
-  //   this.setState({toggle: this.popupClosedState})
-  // }
-  // -- closeAllPopups -- //
-
   // -- setToggle --//
   popupClosedState; // defined in componentDidMount
   setToggle = (target) =>
   {
+    if (target === 'all') {this.setState({toggle: this.popupClosedState});}
     let tempObj = task.clone(this.popupClosedState);
-    console.log(tempObj);
-    tempObj[target] = !this.state.[target]
+    tempObj[target] = !this.state.toggle[target];
     this.setState({toggle: tempObj});
   }
   // -- setToggle --//
 
+  // -- setCateg -- //
+  setCateg = (target) =>
+  {
+    let tempArr = this.state.selected_categ
+    let idx = tempArr.indexOf(target);
+    if (idx === -1) {tempArr.push(target)}
+    else
+    {
+      delete tempArr[idx]
+      tempArr = tempArr.filter(x => x)
+    }
+    this.setState({selected_categ: tempArr});
+    this.filterEvents(tempArr);
+  }
+  // -- setCateg -- //
+
+  // -- setSelectedWeek -- //
+  setSelectedWeek = (adj) =>
+  {
+    let week = this.state.selected_week + adj;
+    this.setState({selected_week: week})
+  }
+
+  // -- setWeek -- //
+  setWeek = (week) =>
+  {
+    let tempArr = [{}, {}, {}, {}, {}, {}, {}];
+
+    this.setState({week: tempArr})
+  }
+  // -- setWeek -- //
 
   // -- setEventState -- //
   setEventState = (data) =>
@@ -493,10 +520,9 @@ class Controls extends React.Component
   // -- handleChange_locValue -- //
 
   // -- filterEvents -- //
-  filterEvents = () =>
+  filterEvents = (categ = this.state.selected_categ) =>
   {
     let day = this.state.selected_day.key;
-    let categ = this.state.selected_categ;
     let events = this.params.events[day[0]][day[1]];
     let filtered;
     if (!categ.length) {filtered = events}
@@ -567,7 +593,7 @@ class Controls extends React.Component
     async.getCategories(this.api.getCategoriesUrl())
       .then(x =>
       {
-        this.setState({categList: x, locErr: true})
+        this.setState({categList: x})
         return async.geoLocate();
       })
       .then(x =>
@@ -596,9 +622,14 @@ class Controls extends React.Component
           radius={this.state.radius}
         />
         <Nav
-
-          toggleState={this.state.toggle}
-          date={this.state.selected_day}
+          categ_list={this.state.categList}
+          categ_stateOf={this.state.selected_categ}
+          categ_onClick={this.setCateg}
+          toggle={this.setToggle}
+          toggle_stateOf={this.state.toggle}
+          calendar_date={this.state.selected_day}
+          calendar_week={this.state.week}
+          calendar_setWeek={this.setSelectedWeek}
           eventsFound={this.state.eventsOnMap.length}
           radius_range={this.params.radius_range}
           radius_onClick={this.setRadius}
@@ -799,23 +830,64 @@ class Map extends React.Component
 
 function Nav(props)
 {
-  let date = `${time.daysOfWeek[props.date.weekDay]}, ${time.months[props.date.month]} ${props.date.day}`;
+  let t = props.calendar_date;
+  let date = `${time.daysOfWeek[t.weekDay]}, ${time.months[t.month]} ${t.day}`;
+
+  let week = props.calendar_week.map((x, i) =>
+  {
+    return(
+      <div>
+        {time.daysOfWeek[i]}
+        <br/>
+        <i className="fa fa-spinner fa-pulse fa-3x fa-fw"></i>
+      </div>
+    );
+  });
+
+  let weekFilter =
+  (
+    <div>
+      <h3>Calendar</h3>
+      <div className='search_filter_week'>
+        {week}
+        <span className='arrows'>
+          <div><i className="fa fa-arrow-up" aria-hidden="true"></i></div>
+          <div><i className="fa fa-arrow-down" aria-hidden="true"></i></div>
+        </span>
+      </div>
+    </div>
+  )
+
   let radius_range = props.radius_range.map(x =>
-    {
-      return(
-      <li
-        id={'radius-'+x}
-        className={props.radius === x ? 'active' : ''}
-        onClick={
-          () =>
-          {
-            nav.closePopups(true);
-            props.radius_onClick(x);
-          }
+  {
+    return(
+    <li
+      id={'radius-'+x}
+      className={props.radius === x ? 'active' : ''}
+      onClick={
+        () =>
+        {
+          props.toggle('radius');
+          props.radius_onClick(x);
         }
-      >{x} miles</li>
-      );
-    });
+      }
+    >{x} miles</li>
+    );
+  });
+
+  let categList = props.categ_list.map(x =>
+  {
+    let name = props.categ_stateOf.indexOf(x) !== -1 ? 'on' : 'off'
+    return(
+      <span
+        onClick={() => props.categ_onClick(x)}
+        className={name}
+      >
+        {x}
+      </span>
+    );
+  });
+
   function handleSubmit(e)
   {
     e.preventDefault();
@@ -833,21 +905,36 @@ function Nav(props)
           </div>
 
           <div>
-            <span className='search_radius' id='radius'>
+            <span
+              className='search_radius'
+              onClick={() => {props.toggle('radius')}}
+              id='radius'>
               {props.radius} miles
               {' '}<i className="fa fa-map-o" aria-hidden="true"></i>
             </span>
-            <div className='popup' id='radius-popup'>
+            <div
+              className='popup'
+              id='radius-popup'
+              style={props.toggle_stateOf.radius ? {} : {display: 'none'}}
+            >
               <ul>{radius_range}</ul>
             </div>
           </div>
           <div>of</div>
           <div>
-            <span className='search_location' id='location'>
+            <span
+              className='search_location'
+              id='location'
+              onClick={() => {props.toggle('location')}}
+            >
               {props.loc + ' '}
               <i className="fa fa-map-marker" aria-hidden="true"></i>
             </span>
-            <div className='popup' id='location-popup'>
+            <div
+              className='popup'
+              id='location-popup'
+              style={props.toggle_stateOf.location ? {} : {display: 'none'}}
+            >
               <form id='location-search' onSubmit={handleSubmit}>
                 <input
                   id='location-input'
@@ -857,13 +944,15 @@ function Nav(props)
                   value={props.loc_inputValue}
                   placeholder='City or postal code'
                 />
-                {/* <input type='submit' style={{display: 'none'}}/> */}
               </form>
             </div>
           </div>
           <div>on</div>
           <div>
-            <span className='search_calendar' id='calendar'>
+            <span
+              className='search_date'
+              onClick={() => {props.toggle('filter')}}
+              id='date'>
               {date + ' '}
               <i className="fa fa-calendar" aria-hidden="true"></i>
             </span>
@@ -871,82 +960,39 @@ function Nav(props)
         </div>
 
         {/*  */}
-        <div className='search_filter-toggle'>
-          {/* <div>Filter</div> */}
-          {/* <i className="fa fa-sort-asc" aria-hidden="true"></i> */}
-          <i className="fa fa-sort-desc" aria-hidden="true"></i>
-        </div>
+        <div
+          className={`search_filter ${props.toggle_stateOf.filter ? 'on' : 'off'}`}
+        >
 
-        <div className='search_filter'>
-          <div className='search_filter_categ'></div>
-          <div className='search_filter_calendar'></div>
+          <div className='line'/>
+          {weekFilter}
+
+          <h3>Categories</h3>
+          <div className='search_filter_categ'>{categList}</div>
+
+        </div>
+        <div
+          className='search_filter-toggle'
+          onClick={() => {props.toggle('filter')}}
+        >
+          {/* <div>Filter</div> */}
+          {props.toggle_stateOf.filter ?
+            <i className="fa fa-sort-asc" aria-hidden="true"></i> :
+            <i className="fa fa-sort-desc" aria-hidden="true"></i>
+          }
         </div>
         {/*  */}
 
-    </div>
+        {/* onClick={() => {props.toggle('location')}} */}
+        {/* style={props.toggle_stateOf.location ? {} : {display: 'none'}} */}
 
-      {/* <div className='search_filter-drop search_child'>
-        <i className="fa fa-sort-desc" aria-hidden="true"></i>
-        <i className="fa fa-sort-asc" aria-hidden="true"></i>
-      </div> */}
+      </div>
 
     </nav>
-
   );
-}
-
-const nav = {};
-nav['radius'] = false;
-nav['location'] = false;
-
-nav.closePopups = (offAll = false) =>
-{
-  document.getElementById('radius-popup').style.display = 'none';
-  document.getElementById('location-popup').style.display = 'none';
-  if (offAll)
-  {
-    nav['radius'] = false;
-    nav['location'] = false;
-  }
-}
-
-window.onload = () => {
-// radius
-document.getElementById('radius').addEventListener('click', function()
-{
-  nav.closePopups();
-  if (!nav['radius'])
-  {
-    nav['radius'] = true;
-    nav['location'] = false;
-    document.getElementById('radius-popup').style.display = 'block';
-  }
-  else
-  {
-    nav['radius'] = false;
-    nav['location'] = false;
-  }
-});
-// location
-document.getElementById('location').addEventListener('click', function()
-{
-  nav.closePopups();
-  if (!nav['location'])
-  {
-    nav['location'] = true;
-    nav['radius'] = false;
-    document.getElementById('location-popup').style.display = 'block';
-    document.getElementById('location-input').focus();
-  }
-  else
-  {
-    nav['radius'] = false;
-    nav['location'] = false;
-  }
-});
-
 }
 
 (function() {
   ReactDOM.render(<Controls />, document.getElementById('controls'));
 })();
+

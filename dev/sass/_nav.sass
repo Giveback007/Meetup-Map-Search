@@ -142,17 +142,22 @@
       color: $hoverState1
 
 .search_filter_week
-  display: flex
-  margin: 0 15px
-  > div
-    margin: 0 5px
-    border: solid 1px
-    flex: 1
-    &:hover
-      cursor: pointer
-    &.inactive
-      color: $hoverState1
-  .arrows
-    border: none
-    &:hover
-      cursor: pointer
+  .arrow
+    cursor: pointer
+    // border: solid 1px
+    padding: 3px
+  .week_main
+    display: flex
+    margin: 0 15px
+    > div
+      margin: 0 5px
+      border: solid 1px
+      flex: 1
+      &:hover
+        cursor: pointer
+      &.inactive
+        cursor: inherit
+        color: $hoverState1
+      i
+        margin: 10px
+        font-size: 30px

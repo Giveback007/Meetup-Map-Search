@@ -16,11 +16,11 @@ class Controls extends React.Component
       tracker: {}, // for loaded days
       eventsOnMap: [],
 
-      isLoading: false,
       locErr: false,
       locErrMessage: '',
       locInputValue: '',
 
+      selected_week: 0,
       week: [{}, {}, {}, {}, {}, {}, {}],
 
       toggle:
@@ -67,7 +67,8 @@ class Controls extends React.Component
     this.params.timeLimit = limit;
     this.params.events = time.createCalendarObj(limit);
     this.todayIsLoaded = false;
-    this.setLocName(loc)
+    this.setLocName(loc);
+    this.setWeek(-1, true);
     this.setState(
       {
         tracker: time.createCalendarObj(limit, true),
@@ -79,6 +80,33 @@ class Controls extends React.Component
     this.eventsFindLoop(loc, radius, limit);
   };
   // -- newSearch -- //
+
+  // -- setTracker -- //
+  updateDateTracker = (tracker, limit) =>
+  {
+  	let loaded = task.clone(tracker);
+
+  	let y = limit.year, m = limit.month, d = limit.day;
+  	let stop = false;
+  	while (!stop)
+  	{
+  		d--;
+  		if (d < 1) {m--; d = 31}
+  		if (m < 0) {y--; m = 11}
+  		let key = time.getKey(y, m, d);
+  		if (tracker[key[0]] !== undefined)
+  		{
+  			if (loaded[key[0]][key[1]] !== undefined)
+  			{
+  				loaded[key[0]][key[1]] = true;
+  			}
+  		}
+  		else { stop = true }
+  	}
+
+  	return loaded;
+  }
+  // -- setTracker -- //
 
   // -- setToggle --//
   popupClosedState; // defined in componentDidMount
@@ -103,10 +131,26 @@ class Controls extends React.Component
       tempArr = tempArr.filter(x => x)
     }
     this.setState({selected_categ: tempArr});
-    this.filterEvents(tempArr);
+    this.setWeek(0, false, tempArr);
+    this.setEventsOnMap(tempArr);
   }
   // -- setCateg -- //
 
+  // -- setWeek -- //
+  setWeek = (adj = 0, reset = false, categ = this.state.selected_categ) =>
+  {
+    let w = this.state.selected_week + adj;
+    if (reset) {w = 0}
+    if (w < 0) {return}
+    let tempArr = time.createWeekObj(w);
+    tempArr.map((x, i) =>
+    {
+      tempArr[i].length =
+        this.filterEvents(categ, x.key).length;
+    });
+    this.setState({selected_week: w, week: tempArr})
+  }
+  // -- setWeek -- //
 
   // -- setEventState -- //
   setEventState = (data) =>
@@ -160,22 +204,29 @@ class Controls extends React.Component
   // -- handleChange_locValue -- //
 
   // -- filterEvents -- //
-  filterEvents = (categ = this.state.selected_categ) =>
+  filterEvents = (categ = this.state.selected_categ, key = this.state.selected_day.key) =>
   {
-    let day = this.state.selected_day.key;
-    let events = this.params.events[day[0]][day[1]];
+    let events = this.params.events[key[0]][key[1]];
     let filtered;
     if (!categ.length) {filtered = events}
+    else if (!events) {events = []}
     else
     {
       filtered = events.filter(x =>
         categ.indexOf(x.category) !== -1
       );
     }
-
-    this.setState({eventsOnMap: filtered});
+    if (filtered === undefined) {filtered = []}
+    return filtered;
   };
   // -- filterEvents -- //
+
+  // -- setEventsOnMap -- //
+  setEventsOnMap = (categ = this.state.selected_categ) =>
+  {
+    this.setState({eventsOnMap: this.filterEvents(categ)});
+  }
+  // -- setEventsOnMap -- //
 
   // -- loadToday -- //
   todayIsLoaded = false;
@@ -186,7 +237,7 @@ class Controls extends React.Component
       if(this.state.tracker[key[0]][key[1]] || forceLoad)
       {
         this.todayIsLoaded = true;
-        this.filterEvents();
+        this.setEventsOnMap();
       }
   };
   // -- loadToday -- //
@@ -267,8 +318,11 @@ class Controls extends React.Component
           categ_onClick={this.setCateg}
           toggle={this.setToggle}
           toggle_stateOf={this.state.toggle}
-          calendar_date={this.state.selected_day}
-          calendar_week={this.state.week}
+          date={this.state.selected_day}
+          week={this.state.week}
+          week_set={this.setWeek}
+          week_selected={this.state.selected_week}
+          loadStatus={this.state.tracker}
           eventsFound={this.state.eventsOnMap.length}
           radius_range={this.params.radius_range}
           radius_onClick={this.setRadius}
