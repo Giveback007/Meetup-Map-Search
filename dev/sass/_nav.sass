@@ -151,13 +151,17 @@
     margin: 0 15px
     > div
       margin: 0 5px
-      border: solid 1px
+      padding: 5px
+      color: $hoverState1
+      border: solid 1px $hoverState2
       flex: 1
       &:hover
         cursor: pointer
       &.inactive
         cursor: inherit
-        color: $hoverState1
-      i
-        margin: 10px
-        font-size: 30px
+        border: solid 1px $hoverState1
+      &.selected
+        color: $hoverState2
+      .text
+        margin-top: 10px
+        font-size: 25px

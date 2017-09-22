@@ -124,13 +124,7 @@ time.createWeekObj = function (weeksFromNow) {
   var week = time.getWeekLimit(weeksFromNow);
   var t = (week.unix - day.unix) / 1000 / 60 / 60 / 24;
   while (weekObj.length < 7) {
-    var tempTime = time.getDayLimit(t);
-    var tempObj = {
-      key: tempTime.key,
-      unix: tempTime.unix,
-      timeStringShort: tempTime.timeStringShort,
-      year: tempTime.year
-    };
+    var tempObj = time.getDayLimit(t);
     if (t < 0) {
       tempObj.inactive = true;
     }
@@ -166,33 +160,30 @@ time.createCalendarObj = function (limit) {
   return calendar;
 };
 
-time.updateDateTracker = function (tracker, limit) {
-  var loaded = task.clone(tracker);
-
-  var y = limit.year,
-      m = limit.month,
-      d = limit.day;
-  var stop = false;
-  while (!stop) {
-    d--;
-    if (d < 1) {
-      m--;d = 31;
-    }
-    if (m < 0) {
-      y--;m = 11;
-    }
-    var key = time.getKey(y, m, d);
-    if (tracker[key[0]] !== undefined) {
-      if (loaded[key[0]][key[1]] !== undefined) {
-        loaded[key[0]][key[1]] = true;
-      }
-    } else {
-      stop = true;
-    }
-  }
-
-  return loaded;
-};
+// time.updateDateTracker = (tracker, limit) =>
+// {
+// 	let loaded = task.clone(tracker);
+//
+// 	let y = limit.year, m = limit.month, d = limit.day;
+// 	let stop = false;
+// 	while (!stop)
+// 	{
+// 		d--;
+// 		if (d < 1) {m--; d = 31}
+// 		if (m < 0) {y--; m = 11}
+// 		let key = time.getKey(y, m, d);
+// 		if (tracker[key[0]] !== undefined)
+// 		{
+// 			if (loaded[key[0]][key[1]] !== undefined)
+// 			{
+// 				loaded[key[0]][key[1]] = true;
+// 			}
+// 		}
+// 		else { stop = true }
+// 	}
+//
+// 	return loaded;
+// }
 
 var async = {};
 // -- ajaxCall -- //
@@ -339,6 +330,7 @@ async.geocode = function (locStr) {
     });
   });
 };
+// -- geocode -- //
 
 var Controls = function (_React$Component) {
   _inherits(Controls, _React$Component);
@@ -348,10 +340,11 @@ var Controls = function (_React$Component) {
 
     var _this = _possibleConstructorReturn(this, (Controls.__proto__ || Object.getPrototypeOf(Controls)).call(this, props));
 
+    _this.weekLimit = 4;
     _this.params = {
       events: {},
       meta: {},
-      timeLimit: time.getWeekLimit(0),
+      timeLimit: time.getWeekLimit(_this.weekLimit),
       radius_range: [5, 10, 25, 35, 50, 100]
     };
     _this.api = {
@@ -390,7 +383,7 @@ var Controls = function (_React$Component) {
       _this.eventsFindLoop(loc, radius, limit);
     };
 
-    _this.updateDateTracker = function (tracker, limit) {
+    _this.setTracker = function (tracker, limit) {
       var loaded = task.clone(tracker);
 
       var y = limit.year,
@@ -414,7 +407,7 @@ var Controls = function (_React$Component) {
           stop = true;
         }
       }
-
+      _this.setWeek();
       return loaded;
     };
 
@@ -443,6 +436,11 @@ var Controls = function (_React$Component) {
       _this.setEventsOnMap(tempArr);
     };
 
+    _this.setDate = function (date) {
+      _this.setState({ selected_day: date });
+      _this.setEventsOnMap(_this.state.selected_categ, date.key);
+    };
+
     _this.setWeek = function () {
       var adj = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
       var reset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
@@ -452,7 +450,7 @@ var Controls = function (_React$Component) {
       if (reset) {
         w = 0;
       }
-      if (w < 0) {
+      if (w < 0 || w > _this.weekLimit) {
         return;
       }
       var tempArr = time.createWeekObj(w);
@@ -463,7 +461,7 @@ var Controls = function (_React$Component) {
     };
 
     _this.setEventState = function (data) {
-      var tracker = time.updateDateTracker(_this.state.tracker, data.lastEventTime);
+      var tracker = _this.setTracker(_this.state.tracker, data.lastEventTime);
 
       _this.params.events = data.events;
       _this.setState({ tracker: tracker });
@@ -496,10 +494,7 @@ var Controls = function (_React$Component) {
       _this.setState({ locInputValue: e.target.value });
     };
 
-    _this.filterEvents = function () {
-      var categ = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this.state.selected_categ;
-      var key = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _this.state.selected_day.key;
-
+    _this.filterEvents = function (categ, key) {
       var events = _this.params.events[key[0]][key[1]];
       var filtered = void 0;
       if (!categ.length) {
@@ -519,8 +514,9 @@ var Controls = function (_React$Component) {
 
     _this.setEventsOnMap = function () {
       var categ = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this.state.selected_categ;
+      var key = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _this.state.selected_day.key;
 
-      _this.setState({ eventsOnMap: _this.filterEvents(categ) });
+      _this.setState({ eventsOnMap: _this.filterEvents(categ, key) });
     };
 
     _this.todayIsLoaded = false;
@@ -548,7 +544,7 @@ var Controls = function (_React$Component) {
         } else {
           // set all tracker days to loaded
           limit.day++;
-          var tracker = time.updateDateTracker(_this.state.tracker, limit);
+          var tracker = _this.setTracker(_this.state.tracker, limit);
           _this.setState({ tracker: tracker });
 
           _this.loadToday(true);
@@ -621,6 +617,10 @@ var Controls = function (_React$Component) {
 
   // -- setCateg -- //
 
+  // -- setDate -- //
+
+  // -- setDate -- //
+
   // -- setWeek -- //
 
   // -- setWeek -- //
@@ -692,9 +692,11 @@ var Controls = function (_React$Component) {
           toggle: this.setToggle,
           toggle_stateOf: this.state.toggle,
           date: this.state.selected_day,
+          date_set: this.setDate,
           week: this.state.week,
           week_set: this.setWeek,
           week_selected: this.state.selected_week,
+          week_limit: this.weekLimit,
           loadStatus: this.state.tracker,
           eventsFound: this.state.eventsOnMap.length,
           radius_range: this.params.radius_range,
@@ -885,6 +887,7 @@ function Nav(props) {
   var date = props.date.timeStringShort;
 
   var week = props.week.map(function (x, i) {
+
     if (x.inactive) {
       return React.createElement(
         'div',
@@ -892,14 +895,22 @@ function Nav(props) {
         x.timeStringShort
       );
     }
+
     return React.createElement(
       'div',
-      null,
+      {
+        className: props.date.timeString === x.timeString ? 'selected' : '',
+        onClick: function onClick() {
+          return props.date_set(x);
+        }
+      },
       x.timeStringShort,
       React.createElement('br', null),
-
-      //TODO insert length
-      x.key && props.loadStatus[x.key[0]] && props.loadStatus[x.key[0]][x.key[1]] ? x.length : React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-3x fa-fw' })
+      React.createElement(
+        'div',
+        { className: 'text' },
+        x.key && props.loadStatus[x.key[0]] && props.loadStatus[x.key[0]][x.key[1]] ? x.length + '\r meetups' : React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-3x fa-fw' })
+      )
     );
   });
 
@@ -937,7 +948,8 @@ function Nav(props) {
           return props.week_set(+1);
         },
         className: 'fa fa-arrow-right arrow',
-        'aria-hidden': 'true'
+        'aria-hidden': 'true',
+        style: props.week_selected < props.week_limit ? {} : { color: 'hsl(0, 0%, 65%)', cursor: 'inherit' }
       })
     ),
     React.createElement(

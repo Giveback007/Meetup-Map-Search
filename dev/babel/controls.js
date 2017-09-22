@@ -32,11 +32,13 @@ class Controls extends React.Component
     };
   };
 
+  weekLimit = 4;
+
   params =
   {
     events: {},
     meta: {},
-    timeLimit: time.getWeekLimit(0),
+    timeLimit: time.getWeekLimit(this.weekLimit),
     radius_range: [5, 10, 25, 35, 50, 100]
   };
 
@@ -82,7 +84,7 @@ class Controls extends React.Component
   // -- newSearch -- //
 
   // -- setTracker -- //
-  updateDateTracker = (tracker, limit) =>
+  setTracker = (tracker, limit) =>
   {
   	let loaded = task.clone(tracker);
 
@@ -103,7 +105,7 @@ class Controls extends React.Component
   		}
   		else { stop = true }
   	}
-
+    this.setWeek();
   	return loaded;
   }
   // -- setTracker -- //
@@ -122,7 +124,7 @@ class Controls extends React.Component
   // -- setCateg -- //
   setCateg = (target) =>
   {
-    let tempArr = this.state.selected_categ
+    let tempArr = this.state.selected_categ;
     let idx = tempArr.indexOf(target);
     if (idx === -1) {tempArr.push(target)}
     else
@@ -136,12 +138,20 @@ class Controls extends React.Component
   }
   // -- setCateg -- //
 
+  // -- setDate -- //
+  setDate = (date) =>
+  {
+    this.setState({selected_day: date})
+    this.setEventsOnMap(this.state.selected_categ, date.key);
+  }
+  // -- setDate -- //
+
   // -- setWeek -- //
   setWeek = (adj = 0, reset = false, categ = this.state.selected_categ) =>
   {
     let w = this.state.selected_week + adj;
     if (reset) {w = 0}
-    if (w < 0) {return}
+    if (w < 0 || w > this.weekLimit) {return}
     let tempArr = time.createWeekObj(w);
     tempArr.map((x, i) =>
     {
@@ -155,7 +165,7 @@ class Controls extends React.Component
   // -- setEventState -- //
   setEventState = (data) =>
   {
-    let tracker = time.updateDateTracker(
+    let tracker = this.setTracker(
       this.state.tracker, data.lastEventTime
     );
 
@@ -204,7 +214,7 @@ class Controls extends React.Component
   // -- handleChange_locValue -- //
 
   // -- filterEvents -- //
-  filterEvents = (categ = this.state.selected_categ, key = this.state.selected_day.key) =>
+  filterEvents = (categ, key) =>
   {
     let events = this.params.events[key[0]][key[1]];
     let filtered;
@@ -222,9 +232,9 @@ class Controls extends React.Component
   // -- filterEvents -- //
 
   // -- setEventsOnMap -- //
-  setEventsOnMap = (categ = this.state.selected_categ) =>
+  setEventsOnMap = (categ = this.state.selected_categ, key = this.state.selected_day.key) =>
   {
-    this.setState({eventsOnMap: this.filterEvents(categ)});
+    this.setState({eventsOnMap: this.filterEvents(categ, key)});
   }
   // -- setEventsOnMap -- //
 
@@ -264,7 +274,7 @@ class Controls extends React.Component
       {
         // set all tracker days to loaded
         limit.day++;
-        let tracker = time.updateDateTracker(this.state.tracker, limit);
+        let tracker = this.setTracker(this.state.tracker, limit);
         this.setState({tracker: tracker})
 
         this.loadToday(true);
@@ -319,9 +329,11 @@ class Controls extends React.Component
           toggle={this.setToggle}
           toggle_stateOf={this.state.toggle}
           date={this.state.selected_day}
+          date_set={this.setDate}
           week={this.state.week}
           week_set={this.setWeek}
           week_selected={this.state.selected_week}
+          week_limit={this.weekLimit}
           loadStatus={this.state.tracker}
           eventsFound={this.state.eventsOnMap.length}
           radius_range={this.params.radius_range}

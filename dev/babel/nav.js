@@ -4,6 +4,7 @@ function Nav(props)
 
   let week = props.week.map((x, i) =>
   {
+
     if (x.inactive)
     {
       return(
@@ -12,18 +13,21 @@ function Nav(props)
         </div>
       )
     }
+
     return(
-      <div>
+      <div
+        className={props.date.timeString === x.timeString ? 'selected' : ''}
+        onClick={() => props.date_set(x)}
+      >
         {x.timeStringShort}
-        {/* {console.log('length', x.length)} */}
         <br/>
+        <div className='text'>
         {
-          //TODO insert length
           x.key && props.loadStatus[x.key[0]] && props.loadStatus[x.key[0]][x.key[1]] ?
-            x.length :
+            x.length + '\r meetups' :
             <i className="fa fa-spinner fa-pulse fa-3x fa-fw"></i>
         }
-
+        </div>
       </div>
     );
 
@@ -60,6 +64,9 @@ function Nav(props)
           onClick={() => props.week_set(+1)}
           className="fa fa-arrow-right arrow"
           aria-hidden="true"
+          style={props.week_selected < props.week_limit ?
+            {} :
+            {color: 'hsl(0, 0%, 65%)', cursor: 'inherit'}}
         ></i>
       </h3>
       <div className='week_main'>
