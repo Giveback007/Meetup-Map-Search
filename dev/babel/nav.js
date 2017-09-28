@@ -4,12 +4,15 @@ function Nav(props)
 
   let week = props.week.map((x, i) =>
   {
-
     if (x.inactive)
     {
       return(
         <div className='inactive'>
           {x.timeStringShort}
+          <br/>
+          <div className='text'>
+            <i className="fa fa-calendar-times-o"></i>
+          </div>
         </div>
       )
     }

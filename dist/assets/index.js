@@ -211,7 +211,7 @@ async.limiter = function (meta) {
   var reset = Number(meta['X-RateLimit-Reset']);
   console.log('calls left ' + limit, ', reset in ' + reset + ' sec'); // temp
   return new Promise(function (resolve, reject) {
-    if (limit <= 10) {
+    if (limit <= 5) {
       console.log('limit reached, ' + reset + ' seconds until reset'); // temp
       setTimeout(resolve, reset * 1000 + 500);
     } else {
@@ -249,6 +249,9 @@ async.findEvents = function (url, allEvents) {
         obj.loc = obj.venue ? [obj.venue.lat, obj.venue.lon] : null;
         obj.time = time.getTimeObj(obj.time, obj.utc_offset * -1);
         obj.duration = obj.duration / 60000 || null;
+        if (!obj.group.category) {
+          console.log('No Category!', obj);return;
+        }
         obj.category = obj.group.category.name;
         delete obj.group.category;
         delete obj.utc_offset;
@@ -257,12 +260,15 @@ async.findEvents = function (url, allEvents) {
       });
 
       // Merge data with overflow
-      var overflow = task.clone(async.overflowEvents);
-      async.overflowEvents = [];
-      var newData = data.concat(overflow);
+      // let overflow = task.clone(async.overflowEvents);
+      // async.overflowEvents = [];
+      // let newData = data.concat(overflow);
 
       // Merge the data into existing calendar
-      newData.map(function (x) {
+      data.map(function (x) {
+        if (!x) {
+          console.log('Undefined!');return;
+        }
         var key = x.time.key;
         if (!events[key[0]] || !events[key[0]][key[1]]) {
           async.overflowEvents.push(x);
@@ -319,14 +325,19 @@ async.reverseGeo = function (loc) {
 async.geocode = function (locStr) {
   return new Promise(function (resolve) {
     async.ajaxCall('https://geocode.xyz/' + locStr + '?geoit=json').then(function (x) {
-      console.log('geocode', x);
       if (x.error) {
         console.log('x.error', x);
-        console.log('geocode error handeled'); // TEMP
+        console.log('geocode error handeled');
         resolve([false, 'Location Not Found, Please Try Again']);
         return;
       }
-      resolve([true, [x.latt, x.longt]]);
+      if (x.standard.countryname === 'United States of America') {
+        console.log('success geocode', x);
+        resolve([true, [x.latt, x.longt]]);
+      } else {
+        console.log('fail geocode', x);
+        resolve(async.geocode(locStr + '%20usa'));
+      }
     });
   });
 };
@@ -578,8 +589,8 @@ var Controls = function (_React$Component) {
       locName: '...',
 
       categList: [],
-      selected_day: time.now, //time.getTimeObj(new Date(2017, 8, 7), new Date(2017, 8, 7).getTimezoneOffset() * 60000),//
-      selected_categ: [], //["Tech", "Games"],
+      selected_day: time.getDayLimit(0),
+      selected_categ: [],
 
       tracker: {}, // for loaded days
       eventsOnMap: [],
@@ -887,12 +898,17 @@ function Nav(props) {
   var date = props.date.timeStringShort;
 
   var week = props.week.map(function (x, i) {
-
     if (x.inactive) {
       return React.createElement(
         'div',
         { className: 'inactive' },
-        x.timeStringShort
+        x.timeStringShort,
+        React.createElement('br', null),
+        React.createElement(
+          'div',
+          { className: 'text' },
+          React.createElement('i', { className: 'fa fa-calendar-times-o' })
+        )
       );
     }
 

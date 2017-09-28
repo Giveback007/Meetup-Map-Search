@@ -10,8 +10,8 @@ class Controls extends React.Component
       locName: '...',
 
       categList: [],
-      selected_day: time.now, //time.getTimeObj(new Date(2017, 8, 7), new Date(2017, 8, 7).getTimezoneOffset() * 60000),//
-      selected_categ: [],//["Tech", "Games"],
+      selected_day: time.getDayLimit(0),
+      selected_categ: [],
 
       tracker: {}, // for loaded days
       eventsOnMap: [],

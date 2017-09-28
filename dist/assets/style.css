@@ -253,9 +253,12 @@ a {
     .search_filter_week .week_main > div.inactive {
       cursor: inherit;
       border: solid 1px #a6a6a6; }
+      .search_filter_week .week_main > div.inactive .text {
+        margin-top: 18px;
+        font-size: 30px; }
     .search_filter_week .week_main > div.selected {
       color: white; }
-    .search_filter_week .week_main > div .text {
+    .search_filter_week .week_main > div .text, .search_filter_week .week_main > div .fa {
       margin-top: 10px;
       font-size: 25px; }
 

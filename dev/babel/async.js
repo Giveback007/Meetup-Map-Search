@@ -31,7 +31,7 @@ async.limiter = (meta) =>
 	console.log('calls left ' + limit, ', reset in ' + reset + ' sec') // temp
 	return new Promise((resolve, reject) =>
 	{
-		if (limit <= 10)
+		if (limit <= 5)
 		{
 			console.log('limit reached, ' + reset + ' seconds until reset'); // temp
 			setTimeout(resolve, (reset * 1000) + 500);
@@ -81,6 +81,7 @@ async.findEvents = (url, allEvents) =>
 					[obj.venue.lat, obj.venue.lon] : null;
 				obj.time = time.getTimeObj(obj.time, obj.utc_offset * -1);
 				obj.duration = obj.duration / 60000 || null;
+				if (!obj.group.category) {console.log('No Category!',obj); return;}
 				obj.category = obj.group.category.name;
 				delete obj.group.category;
 				delete obj.utc_offset;
@@ -89,12 +90,13 @@ async.findEvents = (url, allEvents) =>
 			});
 
 			// Merge data with overflow
-			let overflow = task.clone(async.overflowEvents);
-			async.overflowEvents = [];
-			let newData = data.concat(overflow);
+			// let overflow = task.clone(async.overflowEvents);
+			// async.overflowEvents = [];
+			// let newData = data.concat(overflow);
 
 			// Merge the data into existing calendar
-			newData.map(x => {
+			data.map(x => {
+				if (!x) {console.log('Undefined!');return;}
 				let key = x.time.key;
 				if (!events[key[0]] || !events[key[0]][key[1]])
 				{
@@ -157,15 +159,23 @@ async.geocode = (locStr) =>
 		async.ajaxCall(`https://geocode.xyz/${locStr}?geoit=json`)
 			.then(x =>
 				{
-					console.log('geocode', x);
 					if(x.error)
 					{
 						console.log('x.error', x);
-						console.log('geocode error handeled'); // TEMP
+						console.log('geocode error handeled');
 						resolve([false, 'Location Not Found, Please Try Again']);
 						return;
 					}
-					resolve([true, [x.latt, x.longt]])
+					if (x.standard.countryname === 'United States of America')
+					{
+						console.log('success geocode', x);
+						resolve([true, [x.latt, x.longt]])
+					}
+					else
+					{
+						console.log('fail geocode', x);
+						resolve(async.geocode(`${locStr}%20usa`))
+					}
 				});
 	});
 };
