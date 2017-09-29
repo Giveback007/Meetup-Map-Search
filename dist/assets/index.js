@@ -359,16 +359,16 @@ var Controls = function (_React$Component) {
       radius_range: [5, 10, 25, 35, 50, 100]
     };
     _this.api = {
-      key: apiKey.meetup || console.log('MEETUP API KEY ERROR'),
+      key: /#access_token=\s*(.*?)\s*&/g.exec(window.location.href)[1],
       omit: 'description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url',
       getEventUrl: function getEventUrl(latLon, radius) {
-        return 'https://api.meetup.com/find/events?' + '&sign=true&photo-host=public&' + ('lat=' + latLon[0] + '&lon=' + latLon[1]) + ('&radius=' + radius + '&fields=group_photo,group_category') + ('&omit=' + _this.api.omit) + ('&key=' + _this.api.key);
+        return 'https://api.meetup.com/find/events?' + '&sign=true&photo-host=public&' + ('lat=' + latLon[0] + '&lon=' + latLon[1]) + ('&radius=' + radius + '&fields=group_photo,group_category') + ('&omit=' + _this.api.omit) + ('&access_token=' + _this.api.key);
       },
       getCategoriesUrl: function getCategoriesUrl() {
-        return 'https://api.meetup.com/2/categories?' + ('&sign=true&photo-host=public&key=' + _this.api.key);
+        return 'https://api.meetup.com/2/categories?' + ('&sign=true&photo-host=public&access_token=' + _this.api.key);
       },
       addKey: function addKey(url) {
-        return url + ('&key=' + _this.api.key);
+        return url + ('&access_token=' + _this.api.key);
       }
     };
 
