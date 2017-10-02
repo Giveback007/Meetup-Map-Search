@@ -54,6 +54,8 @@ const getTimeString = (t, shortForm = false) =>
 		min: date.getUTCMinutes(),
 		weekDay: date.getUTCDay(),
 	}
+	obj.weekString = `${time.daysOfWeek[obj.weekDay]}`;
+	obj.monthString = `${time.months[obj.month]}`;
 	obj.timeString = getTimeString(obj);
 	obj.timeStringShort = getTimeString(obj, true)
 	obj.key = time.getKey(obj.year, obj.month, obj.day);

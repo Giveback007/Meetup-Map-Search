@@ -81,6 +81,8 @@ time.getTimeObj = function (unix, offset) {
     min: date.getUTCMinutes(),
     weekDay: date.getUTCDay()
   };
+  obj.weekString = '' + time.daysOfWeek[obj.weekDay];
+  obj.monthString = '' + time.months[obj.month];
   obj.timeString = getTimeString(obj);
   obj.timeStringShort = getTimeString(obj, true);
   obj.key = time.getKey(obj.year, obj.month, obj.day);
@@ -896,14 +898,21 @@ var Map = function (_React$Component2) {
 
 function Nav(props) {
   var date = props.date.timeStringShort;
-
   var week = props.week.map(function (x, i) {
     if (x.inactive) {
       return React.createElement(
         'div',
         { className: 'inactive' },
-        x.timeStringShort,
-        React.createElement('br', null),
+        React.createElement(
+          'span',
+          null,
+          x.weekString,
+          React.createElement(
+            'span',
+            { className: 'mobile-hide' },
+            ' ' + x.monthString + ' ' + x.day
+          )
+        ),
         React.createElement(
           'div',
           { className: 'text' },
@@ -920,12 +929,34 @@ function Nav(props) {
           return props.date_set(x);
         }
       },
-      x.timeStringShort,
-      React.createElement('br', null),
+      React.createElement(
+        'span',
+        null,
+        x.weekString,
+        React.createElement(
+          'span',
+          { className: 'mobile-hide' },
+          ' ' + x.monthString + ' ' + x.day
+        )
+      ),
       React.createElement(
         'div',
         { className: 'text' },
-        x.key && props.loadStatus[x.key[0]] && props.loadStatus[x.key[0]][x.key[1]] ? x.length + '\r meetups' : React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-3x fa-fw' })
+        x.key && props.loadStatus[x.key[0]] && props.loadStatus[x.key[0]][x.key[1]] ? React.createElement(
+          'span',
+          null,
+          x.length,
+          React.createElement('br', null),
+          React.createElement(
+            'span',
+            { className: 'text-mobile' },
+            ' events'
+          )
+        ) : React.createElement(
+          'span',
+          null,
+          React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-3x fa-fw' })
+        )
       )
     );
   });
@@ -1025,7 +1056,7 @@ function Nav(props) {
         { className: 'search_selector' },
         React.createElement(
           'div',
-          null,
+          { className: 'mobile-hide' },
           props.eventsFound,
           ' meetups within'
         ),

@@ -1,15 +1,13 @@
 function Nav(props)
 {
   let date = props.date.timeStringShort;
-
   let week = props.week.map((x, i) =>
   {
     if (x.inactive)
     {
       return(
         <div className='inactive'>
-          {x.timeStringShort}
-          <br/>
+          <span>{x.weekString}<span className='mobile-hide'>{` ${x.monthString} ${x.day}`}</span></span>
           <div className='text'>
             <i className="fa fa-calendar-times-o"></i>
           </div>
@@ -22,13 +20,12 @@ function Nav(props)
         className={props.date.timeString === x.timeString ? 'selected' : ''}
         onClick={() => props.date_set(x)}
       >
-        {x.timeStringShort}
-        <br/>
+        <span>{x.weekString}<span className='mobile-hide'>{` ${x.monthString} ${x.day}`}</span></span>
         <div className='text'>
         {
           x.key && props.loadStatus[x.key[0]] && props.loadStatus[x.key[0]][x.key[1]] ?
-            x.length + '\r meetups' :
-            <i className="fa fa-spinner fa-pulse fa-3x fa-fw"></i>
+            <span>{x.length}<br/><span className='text-mobile'> events</span></span> :
+            <span><i className="fa fa-spinner fa-pulse fa-3x fa-fw"></i></span>
         }
         </div>
       </div>
@@ -116,11 +113,10 @@ function Nav(props)
   return(
     <nav className='nav'>
       <h1>Meetup Map Search</h1>
-      {/* <p>... events in the next 7 days</p> */}
       <div className='search'>
 
         <div className='search_selector'>
-          <div>
+          <div className='mobile-hide'>
             {props.eventsFound} meetups within
           </div>
 
@@ -179,7 +175,6 @@ function Nav(props)
           </div>
         </div>
 
-        {/*  */}
         <div
           className={`search_filter ${props.toggle_stateOf.filter ? 'on' : 'off'}`}
         >
@@ -195,16 +190,11 @@ function Nav(props)
           className='search_filter-toggle'
           onClick={() => {props.toggle('filter')}}
         >
-          {/* <div>Filter</div> */}
           {props.toggle_stateOf.filter ?
             <i className="fa fa-sort-asc" aria-hidden="true"></i> :
             <i className="fa fa-sort-desc" aria-hidden="true"></i>
           }
         </div>
-        {/*  */}
-
-        {/* onClick={() => {props.toggle('location')}} */}
-        {/* style={props.toggle_stateOf.location ? {} : {display: 'none'}} */}
 
       </div>
 

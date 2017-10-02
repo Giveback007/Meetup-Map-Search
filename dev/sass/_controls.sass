@@ -5,11 +5,11 @@
   position: fixed
   top: 50%
   right: 50%
-  transform: translate(55%, 0)
+  transform: translate(50%, 0)
   padding: 12px 7px
   background: white
   box-shadow: 2px 3px 10px rgba(0, 0, 0, 0.4)
-  z-index: 1000
+  z-index: 10000
   border-radius: 5px
   h4
     margin: 0 0 5px
@@ -19,7 +19,6 @@
     font-size: 20px
     border: 1px solid #d9d9d9
     padding: 5px 10px
-    // margin: auto
     height: 40px
     border-radius: 5px
     background: hsl(0, 0%, 98%)
@@ -30,3 +29,12 @@
     &:focus
       transition: all 1s ease
       border: 1px solid rgb(31, 36, 204)
+
+@media screen and (max-width: 600px)
+  #controls
+    height: 130px
+  .locErrHandler
+    h4
+      font-size: 13px
+    input[type=text]
+      width: 250px

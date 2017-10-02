@@ -58,7 +58,7 @@ a {
 .nav {
   width: 100%;
   height: 140px;
-  z-index: 999;
+  z-index: 9999;
   position: fixed;
   top: 0;
   background: #f64060;
@@ -71,22 +71,12 @@ a {
 
 .search {
   margin: 0 auto -50px auto;
-  text-align: center;
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-orient: vertical;
-  -webkit-box-direction: normal;
-  -webkit-flex-direction: column;
-  -ms-flex-direction: column;
-  flex-direction: column;
-  font-size: 17px;
+  font-size: 16px;
   background: #0f1721;
   max-width: 950px; }
 
 .search_selector {
-  padding: 20px 15px;
+  padding: 20px 0;
   display: -webkit-box;
   display: -webkit-flex;
   display: -ms-flexbox;
@@ -217,7 +207,7 @@ a {
   justify-content: center; }
   .search_filter_categ span {
     margin: 2px;
-    padding: 5px;
+    padding: 5px 4px;
     border: solid 1px;
     -webkit-transition: all 5 ease;
     -o-transition: all 5 ease;
@@ -238,7 +228,11 @@ a {
   display: -webkit-flex;
   display: -ms-flexbox;
   display: flex;
-  margin: 0 15px; }
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  margin: 0 10px; }
   .search_filter_week .week_main > div {
     margin: 0 5px;
     padding: 5px;
@@ -253,14 +247,64 @@ a {
     .search_filter_week .week_main > div.inactive {
       cursor: inherit;
       border: solid 1px #a6a6a6; }
+      .search_filter_week .week_main > div.inactive .fa {
+        font-size: 45px; }
       .search_filter_week .week_main > div.inactive .text {
-        margin-top: 18px;
-        font-size: 30px; }
+        margin-top: 15px; }
     .search_filter_week .week_main > div.selected {
       color: white; }
-    .search_filter_week .week_main > div .text, .search_filter_week .week_main > div .fa {
+    .search_filter_week .week_main > div .text {
       margin-top: 10px;
       font-size: 25px; }
+
+@media screen and (max-width: 900px) {
+  .search_filter_categ span {
+    padding: 3px; }
+  .search {
+    font-size: 14px; }
+  .search_filter_week .week_main {
+    margin: 0 5px;
+    font-size: 10.5px; }
+    .search_filter_week .week_main > div {
+      margin: 0 3px;
+      max-width: 75px; }
+      .search_filter_week .week_main > div.inactive .fa {
+        font-size: 25px; }
+      .search_filter_week .week_main > div.inactive .text {
+        margin-top: 10px; }
+      .search_filter_week .week_main > div .text {
+        font-size: 13px; } }
+
+@media screen and (max-width: 600px) {
+  .nav {
+    height: 130px; }
+  .mobile-hide {
+    display: none; }
+  .nav h1 {
+    font-size: 22px; }
+  .nav .search {
+    font-size: 12.5px; }
+  .search_selector {
+    padding: 15px 0; }
+    .search_selector div {
+      margin: 3px; }
+  .search_filter_week .week_main {
+    margin: 0 2px; }
+    .search_filter_week .week_main > div {
+      margin: 2px;
+      padding: 4px 2px; }
+      .search_filter_week .week_main > div .text {
+        margin-top: 4.5px; }
+        .search_filter_week .week_main > div .text .fa {
+          font-size: 15px; }
+        .search_filter_week .week_main > div .text .text-mobile {
+          font-size: 8px; }
+      .search_filter_week .week_main > div.inactive .fa {
+        margin: 0; }
+  .search_filter_categ span {
+    font-size: 11px;
+    padding: 3px 1.5px;
+    margin: 1.5px; } }
 
 #controls {
   height: 140px; }
@@ -269,14 +313,14 @@ a {
   position: fixed;
   top: 50%;
   right: 50%;
-  -webkit-transform: translate(55%, 0);
-  -ms-transform: translate(55%, 0);
-  transform: translate(55%, 0);
+  -webkit-transform: translate(50%, 0);
+  -ms-transform: translate(50%, 0);
+  transform: translate(50%, 0);
   padding: 12px 7px;
   background: white;
   -webkit-box-shadow: 2px 3px 10px rgba(0, 0, 0, 0.4);
   box-shadow: 2px 3px 10px rgba(0, 0, 0, 0.4);
-  z-index: 1000;
+  z-index: 10000;
   border-radius: 5px; }
   .locErrHandler h4 {
     margin: 0 0 5px; }
@@ -298,3 +342,11 @@ a {
       -o-transition: all 1s ease;
       transition: all 1s ease;
       border: 1px solid #1f24cc; }
+
+@media screen and (max-width: 600px) {
+  #controls {
+    height: 130px; }
+  .locErrHandler h4 {
+    font-size: 13px; }
+  .locErrHandler input[type=text] {
+    width: 250px; } }
