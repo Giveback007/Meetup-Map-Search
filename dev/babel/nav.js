@@ -24,7 +24,7 @@ function Nav(props)
         <div className='text'>
         {
           x.key && props.loadStatus[x.key[0]] && props.loadStatus[x.key[0]][x.key[1]] ?
-            <span>{x.length}<br/><span className='text-mobile'> events</span></span> :
+            <span>{x.length}<br/><span className='text-mobile'> event{x.length !== 1 ? 's': ''}</span></span> :
             <span><i className="fa fa-spinner fa-pulse fa-3x fa-fw"></i></span>
         }
         </div>
@@ -117,7 +117,7 @@ function Nav(props)
 
         <div className='search_selector'>
           <div className='mobile-hide'>
-            {props.eventsFound} meetups within
+            {props.eventsFound} meetup{props.eventsFound !== 1 ? 's': ''} within
           </div>
 
           <div>

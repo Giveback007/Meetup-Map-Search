@@ -950,7 +950,8 @@ function Nav(props) {
           React.createElement(
             'span',
             { className: 'text-mobile' },
-            ' events'
+            ' event',
+            x.length !== 1 ? 's' : ''
           )
         ) : React.createElement(
           'span',
@@ -1058,7 +1059,9 @@ function Nav(props) {
           'div',
           { className: 'mobile-hide' },
           props.eventsFound,
-          ' meetups within'
+          ' meetup',
+          props.eventsFound !== 1 ? 's' : '',
+          ' within'
         ),
         React.createElement(
           'div',

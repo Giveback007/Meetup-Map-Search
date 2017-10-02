@@ -247,8 +247,6 @@ a {
     .search_filter_week .week_main > div.inactive {
       cursor: inherit;
       border: solid 1px #a6a6a6; }
-      .search_filter_week .week_main > div.inactive .fa {
-        font-size: 45px; }
       .search_filter_week .week_main > div.inactive .text {
         margin-top: 15px; }
     .search_filter_week .week_main > div.selected {
@@ -256,6 +254,8 @@ a {
     .search_filter_week .week_main > div .text {
       margin-top: 10px;
       font-size: 25px; }
+      .search_filter_week .week_main > div .text .fa {
+        font-size: 45px; }
 
 @media screen and (max-width: 900px) {
   .search_filter_categ span {
@@ -268,8 +268,6 @@ a {
     .search_filter_week .week_main > div {
       margin: 0 3px;
       max-width: 75px; }
-      .search_filter_week .week_main > div.inactive .fa {
-        font-size: 25px; }
       .search_filter_week .week_main > div.inactive .text {
         margin-top: 10px; }
       .search_filter_week .week_main > div .text {
