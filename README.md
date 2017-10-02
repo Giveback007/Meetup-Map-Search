@@ -7,10 +7,12 @@
 
 Out of frustration with using the meetup search to find events I decided to use the provided meetup api to see if I can solve this problem.
 
-This collects all the events within a search radius, and maps it out using open-street-map and leafletJS.
+This utilizes the meetup api to take all events within a search radius, and maps them using open-street-map and leafletJS.
 
-The meetup API can throttle and block for up to an hour if too many calls are made at once. To prevent this the user needs to log in to authorize the application.
+The meetup API can throttle and block for up to an hour if too many calls are made at once, this is especialy a problem when using a single api key. To prevent this the user needs to log in to authorize the application.
 
 The project can be viewed here:
 
 https://secure.meetup.com/oauth2/authorize?client_id=2hdi2rl38imnr4pjip0iuo1t4p&response_type=token&redirect_uri=https://giveback007.github.io/Meetup-Map-Search/dist/index.html
+
+Further improvments can be made, but I am just one dude.
