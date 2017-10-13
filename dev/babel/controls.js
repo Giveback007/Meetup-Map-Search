@@ -44,7 +44,8 @@ class Controls extends React.Component
 
   api =
   {
-    key: /#access_token=\s*(.*?)\s*&/g.exec(window.location.href)[1],
+    token: /#access_token=\s*(.*?)\s*&/g.exec(window.location.href)[1],
+    // token: 'eef7e98fd4c8314c1a95860958978860',
     omit: `description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url`,
     getEventUrl: (latLon, radius) =>
       `https://api.meetup.com/find/events?` +
@@ -52,12 +53,12 @@ class Controls extends React.Component
       `lat=${latLon[0]}&lon=${latLon[1]}` +
       `&radius=${radius}&fields=group_photo,group_category` +
       `&omit=${this.api.omit}`+
-      `&access_token=${this.api.key}`,
+      `&access_token=${this.api.token}`,
     getCategoriesUrl: () =>
       `https://api.meetup.com/2/categories?` +
-      `&sign=true&photo-host=public&access_token=${this.api.key}`,
+      `&sign=true&photo-host=public&access_token=${this.api.token}`,
     addKey: (url) =>
-      url + `&access_token=${this.api.key}`
+      url + `&access_token=${this.api.token}`
   };
 
   // -- newSearch -- //

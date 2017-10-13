@@ -162,31 +162,6 @@ time.createCalendarObj = function (limit) {
   return calendar;
 };
 
-// time.updateDateTracker = (tracker, limit) =>
-// {
-// 	let loaded = task.clone(tracker);
-//
-// 	let y = limit.year, m = limit.month, d = limit.day;
-// 	let stop = false;
-// 	while (!stop)
-// 	{
-// 		d--;
-// 		if (d < 1) {m--; d = 31}
-// 		if (m < 0) {y--; m = 11}
-// 		let key = time.getKey(y, m, d);
-// 		if (tracker[key[0]] !== undefined)
-// 		{
-// 			if (loaded[key[0]][key[1]] !== undefined)
-// 			{
-// 				loaded[key[0]][key[1]] = true;
-// 			}
-// 		}
-// 		else { stop = true }
-// 	}
-//
-// 	return loaded;
-// }
-
 var async = {};
 // -- ajaxCall -- //
 async.ajaxCall = function (url) {
@@ -361,16 +336,17 @@ var Controls = function (_React$Component) {
       radius_range: [5, 10, 25, 35, 50, 100]
     };
     _this.api = {
-      key: /#access_token=\s*(.*?)\s*&/g.exec(window.location.href)[1],
+      token: /#access_token=\s*(.*?)\s*&/g.exec(window.location.href)[1],
+      // token: 'eef7e98fd4c8314c1a95860958978860',
       omit: 'description,visibility,created,id,status,updated,waitlist_count,yes_rsvp_count,venue.name,venue.id,venue.repinned,venue.address_1,venue.address_2,venue.city,venue.country,venue.localized_country_name,venue.phone,venue.zip,venue.state,group.created,group.id,group.join_mode,group.who,group.localized_location,group.region,group.category.sort_name,group.photo.id,group.photo.highres_link,group.photo.photo_link,group.photo.type,group.photo.base_url',
       getEventUrl: function getEventUrl(latLon, radius) {
-        return 'https://api.meetup.com/find/events?' + '&sign=true&photo-host=public&' + ('lat=' + latLon[0] + '&lon=' + latLon[1]) + ('&radius=' + radius + '&fields=group_photo,group_category') + ('&omit=' + _this.api.omit) + ('&access_token=' + _this.api.key);
+        return 'https://api.meetup.com/find/events?' + '&sign=true&photo-host=public&' + ('lat=' + latLon[0] + '&lon=' + latLon[1]) + ('&radius=' + radius + '&fields=group_photo,group_category') + ('&omit=' + _this.api.omit) + ('&access_token=' + _this.api.token);
       },
       getCategoriesUrl: function getCategoriesUrl() {
-        return 'https://api.meetup.com/2/categories?' + ('&sign=true&photo-host=public&access_token=' + _this.api.key);
+        return 'https://api.meetup.com/2/categories?' + ('&sign=true&photo-host=public&access_token=' + _this.api.token);
       },
       addKey: function addKey(url) {
-        return url + ('&access_token=' + _this.api.key);
+        return url + ('&access_token=' + _this.api.token);
       }
     };
 
