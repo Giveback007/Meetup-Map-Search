@@ -1,2 +1,4 @@
+/node_modules/*
 dist/assets/config.js
 dist/assets/temp.js
+/dist_new/*
