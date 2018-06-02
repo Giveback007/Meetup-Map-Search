@@ -2,3 +2,4 @@
 dist/assets/config.js
 dist/assets/temp.js
 /dist_new/*
+src/secret.ts

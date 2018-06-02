@@ -9,15 +9,8 @@ async.ajaxCall = (url) =>
 			url: url,
 			type: 'get',
 			dataType: "jsonp",
-			success: (x) =>
-			{
-				// console.log('ajax', x); // temp
-				resolve(x)
-			},
-			error: (err) =>
-			{
-				reject(err)
-			}
+			success: (x) => resolve(x),
+			error: (err) => reject(err)
 		});
 	});
 }
@@ -36,10 +29,7 @@ async.limiter = (meta) =>
 			console.log('limit reached, ' + reset + ' seconds until reset'); // temp
 			setTimeout(resolve, (reset * 1000) + 500);
 		}
-		else
-		{
-			resolve();
-		}
+		else resolve();
 	});
 };
 // -- limiter -- //
