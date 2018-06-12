@@ -22,8 +22,6 @@ export async function getMeetupEventData({ key, token, latitude, longitude, radi
     + 'group.photo.type,group.photo.base_url';
     
     const extras = `&sign=true&photo-host=public&fields=group_photo,group_category${omit}`;
-
-    if (!(key || token)) throw 'no key or token';
     
     const auth = `&${key ? 'key' : 'access_token'}=${key || token}`;
     const location = `&lat=${latitude}&lon=${longitude}&radius=${radius}`;

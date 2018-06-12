@@ -1,13 +1,6 @@
 @import "~leaflet/dist/leaflet.css";
 
-body {
-    margin: 0;
-}
-
-#map {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 100vw;
-    height: 100vh;
-}
+@import "./styles/base.sass";
+@import "./styles/map.sass";
+@import "./styles/nav.sass";
+@import "./styles/controls.sass";

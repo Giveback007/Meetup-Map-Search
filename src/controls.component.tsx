@@ -28,13 +28,17 @@ class Controls extends React.Component<
 
     render({ lat, lon, radius } = this.props) {
         return (
-        <div>
-            {/* stuff */}
+        <div id="controls">
+        
+            <div id="nav">
+                <button onClick={ this.init }>Start</button>
+                <h1>lat: { lat }</h1>
+                <h1>lon: { lon }</h1>
+                <h1>radius: { radius }</h1>
+            </div>
+
             <MapComponent />
-            {/* <button onClick={ this.init }>Start</button>
-            <h1>lat: { lat }</h1>
-            <h1>lon: { lon }</h1>
-            <h1>radius: { radius }</h1> */}
+            
         </div>)
     }
 }
