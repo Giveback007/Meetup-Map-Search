@@ -5,12 +5,12 @@ const jsonp = async (url) => (await fetchJsonp(url)).json();
 interface getMeetupEventDataArgs {
     key?: string;
     token?: string;
-    lat: number;
-    lon: number;
+    latitude: number;
+    longitude: number;
     radius: number;
 }
 
-export async function getMeetupEventData({ key, token, lat, lon, radius }: getMeetupEventDataArgs) {
+export async function getMeetupEventData({ key, token, latitude, longitude, radius }: getMeetupEventDataArgs) {
     if (!key && !token) return console.error('no key or token');
 
     // TODO: check wait list & high res
@@ -23,11 +23,12 @@ export async function getMeetupEventData({ key, token, lat, lon, radius }: getMe
     
     const extras = `&sign=true&photo-host=public&fields=group_photo,group_category${omit}`;
 
+    if (!(key || token)) throw 'no key or token';
+    
     const auth = `&${key ? 'key' : 'access_token'}=${key || token}`;
-    const coords = `&lat=${lat}&lon=${lon}&radius=${radius}`;
+    const location = `&lat=${latitude}&lon=${longitude}&radius=${radius}`;
 
-    const url = `https://api.meetup.com/find/events?${coords}${extras}${auth}`;
+    const url = `https://api.meetup.com/find/events?${location}${extras}${auth}`;
 
-    const x = jsonp(url);
-    console.log(await x);
+    return jsonp(url);
 }
