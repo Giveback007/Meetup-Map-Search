@@ -1,8 +1,6 @@
 import React = require("react");
 import { connect } from "react-redux";
-import { State } from "./store/store";
 import { Dispatch } from "redux";
-import { AppActions } from "./actions";
 
 import { 
     map as leafMap,
@@ -11,6 +9,8 @@ import {
     tileLayer,
     TileLayer
 } from 'leaflet';
+import { State } from "./store/root.reducer";
+import { AppActions } from "./store/actions";
 
 const stateToProps = (state: State) => ({});
 const dispatchToProps = (dispatch: Dispatch<AppActions>) => 

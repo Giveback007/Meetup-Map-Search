@@ -11,7 +11,7 @@ module.exports = {
         port: 9000
     },
     entry: {
-        app:"./src/app.tsx",
+        app:"./src/index.tsx",
         // vendor: ["react", "react-dom", "chess.js"]
     },
     output: {

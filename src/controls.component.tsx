@@ -1,11 +1,11 @@
 import React = require("react");
 import { Dispatch } from "redux";
-import { AppActions, APP_INIT, AppInit } from "./actions";
 import { getMeetupEventData } from "./api";
 import { key } from "./secret";
 import { connect } from "react-redux";
-import { State } from "./store/store";
-import { MapComponent } from "./map.component";
+
+import { State } from "./store/root.reducer";
+import { AppActions, AppInit, APP_INIT } from "./store/actions";
 
 const stateToProps = (state: State) => state.app;
 const dispatchToProps = (dispatch: Dispatch<AppActions>) => 
@@ -35,10 +35,7 @@ class Controls extends React.Component<
                 <h1>lat: { lat }</h1>
                 <h1>lon: { lon }</h1>
                 <h1>radius: { radius }</h1>
-            </div>
-
-            <MapComponent />
-            
+            </div>            
         </div>)
     }
 }
