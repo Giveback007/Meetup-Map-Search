@@ -6,8 +6,8 @@ export interface envVars {
 
 export const DEBUG_STORAGE_KEY = 'meetup-map-debug';
 
-export function getEnv({ fromStorage } = { fromStorage: false }): envVars {
-    if (fromStorage) {
+export function getEnv(args = { fromStorage: false }): envVars {
+    if (args.fromStorage) {
         const lsString = localStorage.getItem(DEBUG_STORAGE_KEY);
         return lsString ? JSON.parse(lsString) : { };
     } else {

@@ -23,13 +23,9 @@ class Controls extends React.Component<P, S> {
     state = initState;
     constructor(props) { super(props); }
 
-    init = () => {
+    componentDidMount() {
         navigator.geolocation.getCurrentPosition(({ coords: { latitude: lat, longitude: lon } }) => {
-            const radius = 25;
-            this.props.appInit({ lat, lon, radius })
-
-            getMeetupEventData({ key, lat, lon, radius }).then(x => console.log(x));
-
+            this.props.appInit({ lat, lon, radius: 25, key, token: null })
         });
     }
 
@@ -54,7 +50,7 @@ class Controls extends React.Component<P, S> {
                     <Icon type="pie-chart" />
                     <span>Option 1</span>
                 </Menu.Item>
-                <Menu.Item key="2" onClick={this.init}>
+                <Menu.Item key="2">
                     <Icon type="desktop" />
                     <span>Option 2</span>
                 </Menu.Item>
@@ -95,10 +91,3 @@ class Controls extends React.Component<P, S> {
 }
 
 export const ControlsComponent = connect(stateToProps, dispatchToProps)(Controls);
-
-// {/* <div id="nav">
-//                 <Button type="primary" onClick={ this.init }>Start</Button>
-//                 <h1>lat: { lat }</h1>
-//                 <h1>lon: { lon }</h1>
-//                 <h1>radius: { radius }</h1>
-//             </div> */}

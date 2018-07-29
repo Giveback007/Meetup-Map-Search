@@ -5,7 +5,10 @@ export class AppInit {
     payload: {
         lat: number,
         lon: number,
-        radius: number
+        radius: number,
+        key?: string,
+        token?: string
+        auth?: string
     };
 };
 
