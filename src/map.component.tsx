@@ -18,11 +18,13 @@ const dispatchToProps = (dispatch: Dispatch<AppActions>) =>
     // appInit: (payload: AppInit['payload']) => dispatch({ type: APP_INIT, payload })
 });
 
-class AppMap extends React.Component<
-    ReturnType<typeof stateToProps> & 
-    ReturnType<typeof dispatchToProps>,
-    { map: LeafMap }
-> {
+type P = ReturnType<typeof stateToProps> & ReturnType<typeof dispatchToProps>;
+type S = { map: LeafMap };
+
+const initState: S = { map: null };
+
+class AppMap extends React.Component<P, S> {
+    state = initState
     constructor(props) { super(props); }
 
     componentDidMount() {

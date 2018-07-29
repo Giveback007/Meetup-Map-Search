@@ -7,15 +7,8 @@ export class AppComponent extends React.Component<{}>{
     render() {
         return (
             <div>
-                
-
                 <ControlsComponent />
-
                 <MapComponent />
-                
-                
-
-                
             </div>
         )
     }

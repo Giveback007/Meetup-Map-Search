@@ -17,16 +17,18 @@ const dispatchToProps = (dispatch: Dispatch<AppActions>) =>
 type P = ReturnType<typeof stateToProps> & ReturnType<typeof dispatchToProps>;
 type S = { collapsed: boolean }
 
+const initState: S = { collapsed: false };
+
 class Controls extends React.Component<P, S> {
-    state = { collapsed: false };
+    state = initState;
     constructor(props) { super(props); }
 
     init = () => {
-        navigator.geolocation.getCurrentPosition(({ coords: { latitude, longitude } }) => {
+        navigator.geolocation.getCurrentPosition(({ coords: { latitude: lat, longitude: lon } }) => {
+            const radius = 25;
+            this.props.appInit({ lat, lon, radius })
 
-            this.props.appInit({ lat: latitude, lon: longitude, radius: 25 })
-
-            getMeetupEventData({ key, latitude, longitude, radius: 25 }).then(x => console.log(x));
+            getMeetupEventData({ key, lat, lon, radius }).then(x => console.log(x));
 
         });
     }
@@ -52,7 +54,7 @@ class Controls extends React.Component<P, S> {
                     <Icon type="pie-chart" />
                     <span>Option 1</span>
                 </Menu.Item>
-                <Menu.Item key="2">
+                <Menu.Item key="2" onClick={this.init}>
                     <Icon type="desktop" />
                     <span>Option 2</span>
                 </Menu.Item>

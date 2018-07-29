@@ -86,7 +86,7 @@ async.findEvents = (url, allEvents) =>
 
 			// Merge the data into existing calendar
 			data.map(x => {
-				if (!x) {console.log('Undefined!');return;}
+				if (!x) { console.log('Undefined!'); return; }
 				let key = x.time.key;
 				if (!events[key[0]] || !events[key[0]][key[1]])
 				{
@@ -111,62 +111,38 @@ async.findEvents = (url, allEvents) =>
 
 // -- getCategories -- //
 async.getCategories = (url) =>
-{
-	return new Promise((resolve) => {
-		function parseData(data)
-		{
-			let arr = [];
-			data.results.map(x =>
-			{
-				arr.push(x.name);
-			});
-			return arr;
-		}
-		async.ajaxCall(url).then( x => resolve(parseData(x)) );
-	});
-};
+	async.ajaxCall(url).then((data) => data.result.map((x) => x.name))
 // -- getCategories -- //
 
 // -- reverseGeo -- //
 async.reverseGeo = (loc) =>
-{
-	return new Promise(resolve => {
-		async.ajaxCall(`https://geocode.xyz/${loc[0]},${loc[1]}?geoit=json`)
-			.then(x =>
-			{
-				let state = x.prov.toUpperCase();
-				let city = task.capitalizeWords(x.city);
-				resolve(`${city}, ${state}`);
-			});
+	async.ajaxCall(`https://geocode.xyz/${loc[0]},${loc[1]}?geoit=json`)
+	.then(x => {
+		const state = x.prov.toUpperCase();
+		const city = task.capitalizeWords(x.city);
+		return `${city}, ${state}`;
 	});
-};
 // -- reverseGeo -- //
 
 // -- geocode -- //
 async.geocode = (locStr) =>
-{
-	return new Promise(resolve => {
-		async.ajaxCall(`https://geocode.xyz/${locStr}?geoit=json`)
-			.then(x =>
-				{
-					if(x.error)
-					{
-						console.log('x.error', x);
-						console.log('geocode error handeled');
-						resolve([false, 'Location Not Found, Please Try Again']);
-						return;
-					}
-					if (x.standard.countryname === 'United States of America')
-					{
-						console.log('success geocode', x);
-						resolve([true, [x.latt, x.longt]])
-					}
-					else
-					{
-						console.log('fail geocode', x);
-						resolve(async.geocode(`${locStr}%20usa`))
-					}
-				});
+	async.ajaxCall(`https://geocode.xyz/${locStr}?geoit=json`)
+	.then(x => {
+		if(x.error)
+		{
+			console.log('x.error', x);
+			console.log('geocode error handled');
+			return [false, 'Location Not Found, Please Try Again'];
+		}
+		if (x.standard.countryname === 'United States of America')
+		{
+			console.log('success geocode', x);
+			return [true, [x.latt, x.longt]]
+		}
+		else
+		{
+			console.log('fail geocode', x);
+			return async.geocode(`${locStr}%20usa`)
+		}
 	});
-};
 // -- geocode -- //
