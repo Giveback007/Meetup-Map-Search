@@ -6,6 +6,7 @@
 
 The project can be viewed here:
 
+[Meetup-Map](https://secure.meetup.com/oauth2/authorize?client_id=2hdi2rl38imnr4pjip0iuo1t4p&response_type=token&redirect_uri=https://giveback007.github.io/Meetup-Map-Search/dist/index.html)
 http://codedave.me/meetup-map/
 
 ### Goals:
@@ -16,3 +17,6 @@ http://codedave.me/meetup-map/
 * Local storage to keep selected category settings
 * Improve the UI to be more mobile friendly
 * Load only the data as needed rather then a month or more in advance
+* Tooltips on all btns
+
+https://secure.meetup.com/oauth2/authorize?client_id=2hdi2rl38imnr4pjip0iuo1t4p&response_type=token&redirect_uri=https://giveback007.github.io/Meetup-Map-Search/dist/index.html
