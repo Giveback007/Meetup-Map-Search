@@ -6,8 +6,7 @@
 
 The project can be viewed here:
 
-[Meetup-Map](https://secure.meetup.com/oauth2/authorize?client_id=2hdi2rl38imnr4pjip0iuo1t4p&response_type=token&redirect_uri=https://giveback007.github.io/Meetup-Map-Search/dist/index.html)
-http://codedave.me/meetup-map/
+[Meetup-Map-Search](https://secure.meetup.com/oauth2/authorize?client_id=2hdi2rl38imnr4pjip0iuo1t4p&response_type=token&redirect_uri=https://giveback007.github.io/Meetup-Map-Search/dist/index.html)
 
 ### Goals:
 * HMR with live reloading
@@ -21,5 +20,3 @@ http://codedave.me/meetup-map/
 * Tooltip for buttons
 * If no token received or expired redirect  get new one
 * Handle if the user rejects location tracking
-
-https://secure.meetup.com/oauth2/authorize?client_id=2hdi2rl38imnr4pjip0iuo1t4p&response_type=token&redirect_uri=https://giveback007.github.io/Meetup-Map-Search/dist/index.html

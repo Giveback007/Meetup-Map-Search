@@ -1,6 +1,5 @@
 import React = require("react");
 import { Dispatch } from "redux";
-import { getMeetupEventData } from "./api";
 import { key } from "./secret";
 import { connect } from "react-redux";
 import { Menu, Icon, Button } from 'antd';
