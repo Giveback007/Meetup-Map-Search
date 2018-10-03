@@ -1,9 +1,10 @@
 import { ControlsComponent } from './controls.component';
 import { MapComponent } from "./map.component";
+import { hot } from "react-hot-loader";
 import React = require("react");
 
 
-export class AppComponent extends React.Component<{}>{
+class AppComponent extends React.Component<{}>{
     render() {
         return (
             <div>
@@ -13,3 +14,5 @@ export class AppComponent extends React.Component<{}>{
         )
     }
 }
+
+export default hot(module)(AppComponent);

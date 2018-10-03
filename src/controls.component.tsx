@@ -1,6 +1,6 @@
 import React = require("react");
 import { Dispatch } from "redux";
-import { key } from "./secret";
+// import { key } from "./secret";
 import { connect } from "react-redux";
 import { Menu, Icon, Button } from 'antd';
 
@@ -23,6 +23,8 @@ class Controls extends React.Component<P, S> {
     constructor(props) { super(props); }
 
     componentDidMount() {
+        return;
+        const key = '' // DELETE
         navigator.geolocation.getCurrentPosition(({ coords: { latitude: lat, longitude: lon } }) => {
             this.props.appInit({ lat, lon, radius: 25, key, token: null })
         });
