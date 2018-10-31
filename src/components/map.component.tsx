@@ -9,8 +9,8 @@ import {
     tileLayer,
     TileLayer
 } from 'leaflet';
-import { State } from "./store/root.reducer";
-import { AppActions } from "./store/actions";
+import { State } from "../store/root.reducer";
+import { AppActions } from "../store/actions";
 
 const stateToProps = (state: State) => ({});
 const dispatchToProps = (dispatch: Dispatch<AppActions>) => 
@@ -23,7 +23,7 @@ type S = { map: LeafMap };
 
 const initState: S = { map: null };
 
-class AppMap extends React.Component<P, S> {
+class MapComponent extends React.Component<P, S> {
     state = initState
     constructor(props) { super(props); }
 
@@ -50,4 +50,4 @@ class AppMap extends React.Component<P, S> {
     }
 }
 
-export const MapComponent = connect(stateToProps, dispatchToProps)(AppMap);
+export const Map = connect(stateToProps, dispatchToProps)(MapComponent);

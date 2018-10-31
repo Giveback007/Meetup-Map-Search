@@ -1,7 +1,7 @@
 import React = require("react");
 import ReactDOM = require("react-dom");
 import { Provider } from "react-redux";
-import App from "./app.component";
+import App from "./components/app.component";
 import { store } from "./store/store";
 import { getEnv, setEnv } from "./utils.ts/debug.utils";
 
