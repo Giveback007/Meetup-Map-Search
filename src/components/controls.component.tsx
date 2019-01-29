@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { Menu } from "./menu.component";
 
 import { State } from "../store/root.reducer";
-import { AppActions, AppInit, APP_INIT } from "../store/actions";
+import { AppActions, AppInit, APP_INIT } from "../store/actions/app.actions";
 
 const stateToProps = (state: State) => state.app;
 const dispatchToProps = (dispatch: Dispatch<AppActions>) => 
@@ -30,7 +30,7 @@ class ControlsComponent extends React.Component<P, S> {
     }
 
     render(
-        { collapsed } = this.state,
+        // { collapsed } = this.state,
         { lat, lon, radius } = this.props
     ) {
         return (

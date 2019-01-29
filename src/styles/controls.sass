@@ -5,19 +5,95 @@
   z-index: 10000
   height: 100%
   #controls-menu
-    // width: 100%
     background: white
     height: 100vh
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.3)
-  #controls-toggle
+    width: 335px
+    overflow: hidden
+    &.closed
+      width: 0
+    .ghost
+      height: 55px
+  #controls-toggle-small
+    display: none
+  #controls-toggle-large
     display: block
     position: absolute
     top: 4px
     left: 100%
     height: 40px
     padding: 0
-    width: 35px
-    
+    width: 25px
+    background: white
+    border: none
+    box-shadow: 1px 2px 5px rgba(0, 0, 0, 0.1)
+
+#controls-menu-search
+    width: 93%
+    position: absolute
+    margin: 10px 0 0 8px
+    button
+      position: absolute
+      right: 5px
+      height: 100%
+      border: none
+      background: transparent
+
+#controls-date-select
+  display: flex
+
+.date-selector
+    margin: 0 2.5px
+    border: 1px solid grey
+    width: 95px
+    text-align: center
+    cursor: pointer 
+    &.selected
+      cursor: defualt
+      border: 1px solid black
+    // .display-date
+    .events-number
+      display: flex
+      flex-direction: column
+
+
+@media screen and (max-width: 600px)
+  #controls
+    bottom: 0
+    left: 0
+    height: 250px
+    #controls-menu
+      width: 100vw
+      height: 250px
+      position: fixed
+      bottom: 0
+      left: 0
+      &.closed
+        height: 35px
+        width: 100vw
+    #controls-toggle-small
+      display: block
+      background: white
+      border: none
+      width: 100%
+      font-size: 18px
+      height: 35px
+    #controls-toggle-large
+      display: none
+
+  #controls-menu-search
+    position: fixed
+    display: initial
+    top: 0
+    right: 0
+    width: 95vw
+    left: 50%
+    transform: translateX(-50%)
+    margin: 10px 0 0 0
+    input
+      height: 35px
+
+       
 // .locErrHandler
 //   position: fixed
 //   top: 50%

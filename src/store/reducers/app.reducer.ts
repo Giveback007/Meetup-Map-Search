@@ -1,6 +1,6 @@
 import { Reducer } from "redux";
-import { AppActions, APP_INIT } from "./actions";
-import { newStateCurrying } from "./root.reducer";
+import { newStateCurrying } from "../root.reducer";
+import { AppActions, APP_INIT } from "../actions/app.actions";
 
 export interface AppState {
     lat: number;

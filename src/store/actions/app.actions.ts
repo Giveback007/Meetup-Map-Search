@@ -12,4 +12,6 @@ export class AppInit {
     };
 };
 
-export type AppActions = AppInit;
+export type AppActions = 
+ | AppInit;
+ 

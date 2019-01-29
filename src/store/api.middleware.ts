@@ -1,8 +1,8 @@
 import { getMeetupCategories } from './../api';
-import { APP_INIT, AppInit } from './actions';
 import { AnyAction } from "../../node_modules/redux";
 import { Effects } from "./root.reducer";
 import { getMeetupEventData } from '../api';
+import { AppInit, APP_INIT } from './actions/app.actions';
 
 export const apiMiddleware: Effects = (store) => (next) => (action: AnyAction) => {
     switch (action.type) {

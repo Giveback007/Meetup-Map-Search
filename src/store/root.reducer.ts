@@ -1,6 +1,7 @@
 import { combineReducers, Middleware } from 'redux';
-import { appReducer, AppState } from './app.reducer';
+import { appReducer, AppState } from './reducers/app.reducer';
 import { jsonp } from '../api';
+import { controlsReducer, ControlsState } from './reducers/controls.reducer';
 // import { jsonp } from '../api';
 // import { ThunkDispatch } from '../../node_modules/redux-thunk';
 // import { store } from './store';
@@ -12,9 +13,11 @@ export type StateKey = keyof State;
 export type Effects = Middleware<{}, State>
 
 export interface State {
-    app: AppState
+    app: AppState;
+    controls: ControlsState;
 }
 
 export const rootReducer = combineReducers<State>({
-    app: appReducer
+    app: appReducer,
+    controls: controlsReducer
 });

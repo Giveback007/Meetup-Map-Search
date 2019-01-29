@@ -10,7 +10,7 @@ import {
     TileLayer
 } from 'leaflet';
 import { State } from "../store/root.reducer";
-import { AppActions } from "../store/actions";
+import { AppActions } from "../store/actions/app.actions";
 
 const stateToProps = (state: State) => ({});
 const dispatchToProps = (dispatch: Dispatch<AppActions>) => 
