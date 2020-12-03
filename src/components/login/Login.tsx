@@ -17,19 +17,18 @@ class Login extends React.Component<P, S> {
 
     handleLogin = () => window.location.href = redirectUrl();
 
-
-    render = () => !this.props.open ? null : <Dialog
+    render = () => <Dialog
         id="login-modal"
         aria-labelledby="login-prompt"
-        open={this.props.open}
+        open={this.props.open || false}
     >
         <DialogTitle>...oops you're logged out.</DialogTitle>
 
         <List>
           <ListItem button onClick={this.handleLogin}>
             <ListItemText>
-            <img src={logo} />
-            <span>Log In</span>
+              <img src={logo} />
+              <span>Log In</span>
             </ListItemText>
           </ListItem>
       </List>
