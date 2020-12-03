@@ -1,11 +1,11 @@
 {
-    "short_name": "PROJECT",
-    "name": "MY-PROJECT",
+    "short_name": "Meetup Maps",
+    "name": "Meetup Maps",
     "start_url": ".",
     "display": "standalone",
     "theme_color": "#000000",
     "background_color": "#ffffff",
-    "description": "THIS IS MY PROJECT",
+    "description": "Search for meetup using a map",
     "lang": "en-US",
     "icons": [
         {

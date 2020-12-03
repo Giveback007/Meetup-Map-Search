@@ -23,7 +23,7 @@ class Login extends React.Component<P, S> {
         aria-labelledby="login-prompt"
         open={this.props.open}
     >
-        <DialogTitle>...oops you're logged out</DialogTitle>
+        <DialogTitle>...oops you're logged out.</DialogTitle>
 
         <List>
           <ListItem button onClick={this.handleLogin}>
