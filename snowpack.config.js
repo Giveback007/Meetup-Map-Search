@@ -32,6 +32,7 @@ module.exports = {
       /* ... */
     },
     devOptions: {
+      // secure: true
       /* ... */
     },
     buildOptions: {

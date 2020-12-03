@@ -7,13 +7,13 @@ import { equal } from '@giveback007/util-lib';
 import logo from '../../assets/logo.svg';
 import './Map.sass';
 import type { Event } from 'src/types/event';
-import { html } from 'lit-html';
+// import { html } from 'lit-html';
 // import { linker, State } from ;
 // import * as esriLeafletGeocoder from 'https://cdn.skypack.dev/esri-leaflet-geocoder@2.3.3';
 
-const markerImg = (img: any) =>
-    (html`<div class='marker-img' style='background-image: url("${img}")'></div>`)
-        .getHTML()
+// const markerImg = (img: any) =>
+//     (html`<div class='marker-img' style='background-image: url("${img}")'></div>`)
+//         .getHTML()
 
 type S = { };
 type P = { } & ReturnType<typeof link>;
@@ -28,8 +28,10 @@ class MapView extends React.Component<P, S> {
         animateAddingMarkers: true,
         removeOutsideVisibleBounds: false,
         showCoverageOnHover: true,
-        maxClusterRadius: 60 // | ((zoom: number) => number)
+        maxClusterRadius: (zoom: number) => zoom * 4,
+        // spiderfyOnMaxZoom: true
         // iconCreateFunction
+
     });
 
     shouldComponentUpdate(np: P) {
@@ -54,7 +56,7 @@ class MapView extends React.Component<P, S> {
     componentDidMount() {
         if (this.mapRef.current) {
             this.map = new LeafletMap(this.mapRef.current, {
-                zoomSnap: 0.4,
+                zoomSnap: 0.3,
                 preferCanvas: true,
             }).setView([39.8, -98.57], 4.5);
             new BasemapLayer("Topographic").addTo(this.map);
@@ -134,7 +136,7 @@ class MapView extends React.Component<P, S> {
 
             const icon = L.divIcon({
                 className: 'marker',
-                iconSize: new L.Point(50, 50),
+                iconSize: new L.Point(40, 40),
                 html: html
             })
 

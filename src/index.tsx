@@ -71,8 +71,7 @@ export async function getData() {
             return store.setState({ showLogin: true, token: null });
         }
 
-        const { events } = data.data;
-        store.updateEvents(events)
+        store.updateEvents(data.data.events)
     }
 }
 

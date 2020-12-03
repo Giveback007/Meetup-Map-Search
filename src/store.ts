@@ -10,10 +10,10 @@ export type State = {
     latLng: [number, number] | null;
 }
 
-const exp1 = '2hdi2rl38imnr4pjip0iuo1t4p';
+// const exp1 = '2hdi2rl38imnr4pjip0iuo1t4p';
 // const exp2 = 'cec00a29d809446f058471f91cb9b75e';
 const initState: State = {
-    token: exp1,
+    token: null,
     showLogin: false,
     events: [],
     latLng: null,

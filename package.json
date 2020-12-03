@@ -6,7 +6,8 @@
   "scripts": {
     "start": "snowpack dev",
     "build": "snowpack build",
-    "postbuild": "workbox generateSW workbox-config.js"
+    "postbuild": "workbox generateSW workbox-config.js",
+    "cert-localhost": "mkcert -key-file snowpack.key -cert-file snowpack.crt localhost"
   },
   "repository": {
     "type": "git",
