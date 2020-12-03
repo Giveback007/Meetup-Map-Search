@@ -4,6 +4,7 @@ const { env } = import.meta;
 import 'normalize.css'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import './index.sass';
 
 import React from 'react';
@@ -61,7 +62,7 @@ export async function getData() {
         const { coords } = location;
         const { longitude: lon, latitude: lat } = coords;
 
-        store.setState({ latLon: [lat, lon] });
+        store.setState({ latLng: [lat, lon] });
         const x = searchUrl({ lat, lon, radius: 35, token: store.getState().token || '' });
 
         const data = await jsonp<EventsResponse | ApiError>(x);

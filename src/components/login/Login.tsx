@@ -2,8 +2,8 @@ import React from 'react';
 // import { AddCircleOutlineIcon } from './material-icons';
 import { Dialog, DialogTitle, List, ListItem, ListItemText } from '../../material-ui';
 import { linker, State } from '../../store';
-import './Login.sass';
 import logo from '../../assets/logo.svg';
+import './Login.sass';
 
 type S = { };
 type P = { } & ReturnType<typeof link>;

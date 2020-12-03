@@ -7,7 +7,7 @@ export type State = {
     events: Event[];
     locEvents: Event[]; // location based events
     onlEvents: Event[]; // online based events
-    latLon: [number, number] | null;
+    latLng: [number, number] | null;
 }
 
 const exp1 = '2hdi2rl38imnr4pjip0iuo1t4p';
@@ -16,7 +16,7 @@ const initState: State = {
     token: exp1,
     showLogin: false,
     events: [],
-    latLon: null,
+    latLng: null,
     locEvents: [],
     onlEvents: []
 }

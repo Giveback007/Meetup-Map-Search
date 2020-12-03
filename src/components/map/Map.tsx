@@ -1,13 +1,19 @@
 import React from 'react';
-import L, { LeafletMouseEvent, Map as LeafletMap } from 'leaflet';
+import L, { LeafletMouseEvent, Map as LeafletMap, Marker } from 'leaflet';
 import 'leaflet.markercluster';
 import { BasemapLayer } from 'esri-leaflet';
 import { linker, State } from '../../store';
 import { equal } from '@giveback007/util-lib';
+import logo from '../../assets/logo.svg';
 import './Map.sass';
 import type { Event } from 'src/types/event';
+import { html } from 'lit-html';
 // import { linker, State } from ;
 // import * as esriLeafletGeocoder from 'https://cdn.skypack.dev/esri-leaflet-geocoder@2.3.3';
+
+const markerImg = (img: any) =>
+    (html`<div class='marker-img' style='background-image: url("${img}")'></div>`)
+        .getHTML()
 
 type S = { };
 type P = { } & ReturnType<typeof link>;
@@ -30,8 +36,8 @@ class MapView extends React.Component<P, S> {
         const p = this.props;
 
         if (this.map) {
-            if (np.latLon && !equal(p.latLon, np.latLon))
-                this.map.setView(np.latLon, 10)
+            if (np.latLng && !equal(p.latLng, np.latLng))
+                this.map.setView(np.latLng, 10)
 
             if (
                 !equal(np.locEvents, p.locEvents)
@@ -59,6 +65,8 @@ class MapView extends React.Component<P, S> {
 
                 // alert("Lat, Lon : " + e.latlng.lat + ", " + e.latlng.lng)
             });
+
+            this.map.addLayer(this.markerCluster);
 
             // centerMarker = L.marker();
             // centerRadius = L.circle();
@@ -99,6 +107,8 @@ class MapView extends React.Component<P, S> {
     }
 
     eventsToMap(local: Event[], online: Event[]) {
+        console.log(local);
+
         online
         this.markerCluster.clearLayers();
         local.forEach(ev => {
@@ -108,18 +118,48 @@ class MapView extends React.Component<P, S> {
             const v = ev.venue;
             const g = ev.group;
 
-            let loc: [number, number] = [0, 0];
+            let latLng: [number, number] = [0, 0];
             if (v && v.lat && v.lon) {
-                loc = [v.lat, v.lon];
+                latLng = [v.lat, v.lon];
                 hasExactLoc = true;
             } else {
-                loc = [g.lat, g.lon];
+                latLng = [g.lat, g.lon];
                 hasExactLoc = false; // TODO: have a way to filter these
             }
 
-            const img = g.photo?.thumb_link;
 
-            loc; img; hasExactLoc;
+            // const img = g.photo?.thumb_link || logo;
+            const html = // html
+                `<div class='marker-img' style='background-image: url(${g.photo?.thumb_link || logo}); background-color: white'></div>`
+
+            const icon = L.divIcon({
+                className: 'marker',
+                iconSize: new L.Point(50, 50),
+                html: html
+            })
+
+            // console.log(icon);
+
+
+
+
+
+            const marker = new Marker(latLng, { icon })
+            .bindPopup(
+                `<b>${g.name}</b>
+                <br/>${ev.name}
+                // <br/><i class="fa fa-clock-o" aria-hidden="true"></i>
+                ${ev.local_time}
+                <br/><a href='${ev.link}' target='_blank'>More Info</a>`,
+                {offset: [0, -5]}
+            ).bindTooltip(`${g.name}`, {
+                offset: [0, -20],
+                direction: 'top'
+            });
+
+            this.markerCluster.addLayer(marker)
+
+            latLng; hasExactLoc;
         })
     }
 
@@ -132,7 +172,7 @@ const link = (s: State) => {
     return {
         locEvents: s.locEvents,
         onlEvents: s.onlEvents,
-        latLon: s.latLon
+        latLng: s.latLng
     }
 };
 export default linker(link, MapView);
