@@ -1,6 +1,6 @@
 import React from 'react';
 import L, { Map as LeafletMap } from 'leaflet';
-import * as esriLeaflet from 'esri-leaflet';
+// import * as esriLeaflet from 'esri-leaflet';
 import { BasemapLayer } from 'esri-leaflet';
 import { linker, State } from '../../store';
 import './Map.sass';

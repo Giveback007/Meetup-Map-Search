@@ -1,6 +1,6 @@
 import React from 'react';
 // import { AddCircleOutlineIcon } from './material-icons';
-import { Dialog, DialogTitle, List, ListItem, ListItemText } from '../material-ui';
+import { Dialog, DialogTitle, List, ListItem, ListItemText } from '../../material-ui';
 import { linker, State } from '../../store';
 import './Login.sass';
 import logo from '../../assets/logo.svg';
