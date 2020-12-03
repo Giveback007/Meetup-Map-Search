@@ -8,7 +8,7 @@ export type State = {
 
 export const store = new StateManager<State>({
     text: 'Some Text',
-    // token: 'cec00a29d809446f058471f91cb9b75e',
+    token: 'cec00a29d809446f058471f91cb9b75e',
     showLogin: false,
 }, { id: 'meetup-map-search', useKeys: ['token'] });
 

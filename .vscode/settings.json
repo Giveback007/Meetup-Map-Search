@@ -47,12 +47,13 @@
         ]
     },
     "cSpell.words": [
+      "Basemap",
       "Unmount",
-      "postbuild",
       "defn",
       "devtool",
       "devtools",
-      "redux",
+      "postbuild",
+      "redux"
     ],
     "editor.rulers": [80],
     "typescript.tsdk": "node_modules\\typescript\\lib",
